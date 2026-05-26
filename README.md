@@ -13,7 +13,6 @@ This package is organized as follows:
 *   **[FEATURES_AND_TESTING_GUIDE.md](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/FEATURES_AND_TESTING_GUIDE.md):** Detailed overview of system design, database schemas, and copy-paste text scripts for QA verification.
 *   **[chatbot_architecture_sitemap.png](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/chatbot_architecture_sitemap.png):** High-resolution system architecture diagram illustrating the backend layers, database interactions, and handoff flows.
 *   **[sitemap.html](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/sitemap.html):** An interactive, visual HTML sitemap mapping the chatbot modules, routes, and data pipelines.
-*   **[SYSTEM_CONTEXT.md](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/SYSTEM_CONTEXT.md):** A comprehensive blueprint designed for future AI agents to instantly restore codebase, database, and workflow context in new chat sessions.
 
 ### 2. ⚙️ Orchestration & Schema (`/requirements`)
 *   **`docker-compose.yml`:** Multi-container orchestration script defining the backend FastAPI service and the chatbot MariaDB database.
