@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RealDealRide Support Admin Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --rdr-navy: #0f172a;
+            --rdr-dark: #1e293b;
+            --rdr-teal: #ff240d;
+            --rdr-teal-hover: #e01b07;
+            --rdr-bg: #0b0f19;
+            --rdr-panel-bg: rgba(30, 41, 59, 0.45);
+            --rdr-border: rgba(255, 255, 255, 0.08);
+            --rdr-text: #e2e8f0;
+            --rdr-text-muted: #94a3b8;
+            --rdr-success: #10b981;
+            --rdr-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background-color: var(--rdr-bg);
+            background-image: radial-gradient(circle at 10% 20%, rgba(255, 36, 13, 0.03) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(15, 23, 42, 0.3) 0%, transparent 50%);
+            color: var(--rdr-text);
+            margin: 0;
+            padding: 30px;
+            box-sizing: border-box;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--rdr-border);
+        }
+
+        .header-title-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .tag {
+            background: rgba(255, 36, 13, 0.15);
+            color: var(--rdr-teal);
+            border: 1px solid rgba(255, 36, 13, 0.25);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            color: var(--rdr-text-muted);
+            background: rgba(30, 41, 59, 0.6);
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--rdr-border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--rdr-success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--rdr-success);
+        }
+
+        .main-container {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 24px;
+            min-height: 0;
+        }
+
+        .panel {
+            background: var(--rdr-panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--rdr-border);
+            box-shadow: var(--rdr-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--rdr-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 17px;
+            margin: 0;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Left Sidebar Lists */
+        .sidebar-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--rdr-border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .item-card:hover {
+            border-color: rgba(255, 36, 13, 0.4);
+            transform: translateY(-2px);
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        .item-card.active {
+            border-color: var(--rdr-teal);
+            background: rgba(255, 36, 13, 0.05);
+            box-shadow: 0 4px 20px rgba(255, 36, 13, 0.05);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .item-title {
+            font-weight: 600;
+            font-size: 14.5px;
+            color: white;
+        }
+
+        .item-meta {
+            font-size: 12px;
+            color: var(--rdr-text-muted);
+            margin-top: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Right Terminal Column */
+        .terminal-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(15, 23, 42, 0.3);
+            min-height: 0;
+        }
+
+        .terminal-chat-area {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 0;
+        }
+
+        .terminal-placeholder {
+            margin: auto;
+            text-align: center;
+            max-width: 320px;
+            color: var(--rdr-text-muted);
+        }
+
+        .terminal-placeholder svg {
+            width: 48px;
+            height: 48px;
+            fill: var(--rdr-border);
+            margin-bottom: 12px;
+        }
+
+        /* Support Chat Message Bubbles */
+        .msg {
+            max-width: 70%;
+            padding: 12px 18px;
+            font-size: 14.5px;
+            line-height: 1.5;
+            border-radius: 16px;
+            box-sizing: border-box;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .msg-user {
+            align-self: flex-start;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--rdr-border);
+            color: var(--rdr-text);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg-admin {
+            align-self: flex-end;
+            background: var(--rdr-teal);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 12px rgba(255, 36, 13, 0.2);
+        }
+
+        .msg-system {
+            align-self: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--rdr-border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--rdr-text-muted);
+        }
+
+        /* Terminal Input Area */
+        .terminal-input-area {
+            padding: 20px 24px;
+            background: rgba(15, 23, 42, 0.6);
+            border-top: 1px solid var(--rdr-border);
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .terminal-input-area input {
+            flex-grow: 1;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--rdr-border);
+            border-radius: 30px;
+            padding: 12px 20px;
+            font-size: 14px;
+            color: white;
+            outline: none;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .terminal-input-area input:focus {
+            border-color: var(--rdr-teal);
+            box-shadow: 0 0 0 3px rgba(255, 36, 13, 0.15);
+        }
+
+        .btn {
+            background: var(--rdr-teal);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--rdr-teal-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--rdr-text);
+            border: 1px solid var(--rdr-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .takeover-bar {
+            background: rgba(255, 36, 13, 0.07);
+            border-bottom: 1px solid rgba(255, 36, 13, 0.15);
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13.5px;
+        }
+
+        .takeover-id {
+            font-family: monospace;
+            font-weight: bold;
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Ticket details area overlay */
+        .ticket-details-area {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 24px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .ticket-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--rdr-border);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .ticket-meta-label {
+            font-size: 12px;
+            color: var(--rdr-text-muted);
+            margin-bottom: 4px;
+        }
+
+        .ticket-meta-value {
+            font-size: 14px;
+            color: white;
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title-area">
+            <h1>RealDealRide Support Panel</h1>
+            <span class="tag">Junu Live Takeover</span>
+        </div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span>FastAPI Server Connected</span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar: Support Tickets & Live Queues -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Live Queues & Tickets</h2>
+            </div>
+            <div class="sidebar-content">
+                <!-- Live chat takeover simulation card -->
+                <div class="item-card" id="chat-queue-card" onclick="selectQueue('chat')">
+                    <div class="item-header">
+                        <span class="item-title" style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 8px; height: 8px; background: var(--rdr-teal); border-radius: 50%; display: inline-block;"></span>
+                            Live WebSocket Takeover
+                        </span>
+                        <span class="tag" style="background: rgba(255,36,13,0.1); color: var(--rdr-teal); font-size: 9px; padding: 2px 6px;">LIVE</span>
+                    </div>
+                    <div class="item-meta">
+                        <span>Session takeover console</span>
+                        <span>ws://localhost:8085</span>
+                    </div>
+                </div>
+
+                <div style="font-size: 12px; font-weight: 600; color: var(--rdr-text-muted); text-transform: uppercase; margin: 10px 0 2px 4px; letter-spacing: 0.5px;">
+                    Junu Support Tickets
+                </div>
+
+                <!-- Ticket Card 1 -->
+                <div class="item-card" id="ticket-1" onclick="selectQueue('ticket-1')">
+                    <div class="item-header">
+                        <span class="item-title">Booking Modification Request</span>
+                        <span class="tag" style="background: rgba(16,185,129,0.1); color: var(--rdr-success); border-color: rgba(16,185,129,0.2); font-size: 9px; padding: 2px 6px;">NEW</span>
+                    </div>
+                    <div class="item-meta">
+                        <span>ID: TKT-194823</span>
+                        <span>By: rakeybulhasan@gmail.com</span>
+                    </div>
+                </div>
+
+                <!-- Ticket Card 2 -->
+                <div class="item-card" id="ticket-2" onclick="selectQueue('ticket-2')">
+                    <div class="item-header">
+                        <span class="item-title">Cancellation Refund Query</span>
+                        <span class="tag" style="background: rgba(16,185,129,0.1); color: var(--rdr-success); border-color: rgba(16,185,129,0.2); font-size: 9px; padding: 2px 6px;">NEW</span>
+                    </div>
+                    <div class="item-meta">
+                        <span>ID: TKT-382910</span>
+                        <span>By: john.doe@example.com</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Terminal -->
+        <div class="panel" style="flex-grow: 1;">
+            <!-- Render Takeover Panel -->
+            <div id="takeover-terminal" style="display: flex; flex-direction: column; flex-grow: 1;">
+                <div class="panel-header">
+                    <h2>Live Chat Takeover Terminal</h2>
+                    <span id="connection-status" style="font-size: 13px; color: var(--rdr-text-muted);">Disconnected</span>
+                </div>
+
+                <!-- Takeover connection bar -->
+                <div class="takeover-bar">
+                    <div>
+                        <span>Enter Customer Session ID to take over chat: </span>
+                        <input type="text" id="session-id-input" placeholder="e.g. 2dd02b68..." style="background: rgba(0,0,0,0.3); border: 1px solid var(--rdr-border); color: white; padding: 6px 12px; border-radius: 8px; font-family: monospace; outline: none; margin-left: 6px; width: 220px;">
+                    </div>
+                    <button class="btn" style="padding: 6px 16px; font-size: 13px;" onclick="connectWebSocket()">Take Over Chat</button>
+                </div>
+
+                <div class="terminal-content">
+                    <div class="terminal-chat-area" id="live-chat-messages">
+                        <div class="terminal-placeholder" id="live-chat-placeholder">
+                            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                            <p>Enter a valid Session ID and click "Take Over Chat" to intercept Junu's WebSocket chat real-time.</p>
+                        </div>
+                    </div>
+
+                    <div class="terminal-input-area">
+                        <input type="text" id="live-message-input" placeholder="Type a message to send directly to customer..." onkeydown="if(event.key==='Enter') sendLiveMessage()" disabled>
+                        <button class="btn" id="send-live-btn" onclick="sendLiveMessage()" disabled>Send Message</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Render Support Tickets Detail Panel -->
+            <div id="ticket-detail-panel" style="display: none; flex-direction: column; flex-grow: 1;">
+                <div class="panel-header">
+                    <h2 id="ticket-header-title">Ticket Title</h2>
+                    <span id="ticket-id-tag" class="tag" style="background: rgba(255,255,255,0.06); color: white; border: 1px solid var(--rdr-border);">TKT-ID</span>
+                </div>
+
+                <div class="ticket-details-area">
+                    <div class="ticket-meta-grid">
+                        <div>
+                            <div class="ticket-meta-label">Customer Email</div>
+                            <div class="ticket-meta-value" id="ticket-meta-email">customer@gmail.com</div>
+                        </div>
+                        <div>
+                            <div class="ticket-meta-label">Category / Issue Type</div>
+                            <div class="ticket-meta-value" id="ticket-meta-category">Modification</div>
+                        </div>
+                        <div>
+                            <div class="ticket-meta-label">Date Created</div>
+                            <div class="ticket-meta-value">May 20, 2026, 08:15 AM</div>
+                        </div>
+                        <div>
+                            <div class="ticket-meta-label">Status</div>
+                            <div class="ticket-meta-value" style="color: var(--rdr-teal)">PENDING HUMAN REPLY</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="font-size: 15px; margin-bottom: 8px; color: white;">Issue Description</h3>
+                        <p id="ticket-description-text" style="font-size: 14.5px; line-height: 1.6; margin: 0; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; border: 1px solid var(--rdr-border);">
+                            User requested support.
+                        </p>
+                    </div>
+
+                    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; margin-top: 24px;">
+                        <h3 style="font-size: 15px; margin-bottom: 8px; color: white;">Draft Reply (Sends Email Notification)</h3>
+                        <div class="terminal-input-area" style="padding: 0; background: transparent; border-top: none;">
+                            <input type="text" id="ticket-reply-input" placeholder="Type support reply here..." onkeydown="if(event.key==='Enter') sendTicketReply()" style="background: rgba(15, 23, 42, 0.4);">
+                            <button class="btn" onclick="sendTicketReply()">Send Email Reply</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let activeSessionId = null;
+
+        function selectQueue(type) {
+            // Manage UI states
+            document.querySelectorAll('.item-card').forEach(el => el.classList.remove('active'));
+            
+            const takeoverPanel = document.getElementById('takeover-terminal');
+            const ticketPanel = document.getElementById('ticket-detail-panel');
+
+            if (type === 'chat') {
+                document.getElementById('chat-queue-card').classList.add('active');
+                takeoverPanel.style.display = 'flex';
+                ticketPanel.style.display = 'none';
+            } else if (type === 'ticket-1') {
+                document.getElementById('ticket-1').classList.add('active');
+                takeoverPanel.style.display = 'none';
+                ticketPanel.style.display = 'flex';
+                
+                document.getElementById('ticket-header-title').innerText = "Booking Modification Request";
+                document.getElementById('ticket-id-tag').innerText = "TKT-194823";
+                document.getElementById('ticket-meta-email').innerText = "rakeybulhasan@gmail.com";
+                document.getElementById('ticket-meta-category').innerText = "Reservation Modification";
+                document.getElementById('ticket-description-text').innerText = "User wants to extend their reservation for the 2016 Honda Pilot by 3 additional days starting next Tuesday. They requested admin approval as Junu cannot finalize dates directly without a credit card charge verification.";
+            } else if (type === 'ticket-2') {
+                document.getElementById('ticket-2').classList.add('active');
+                takeoverPanel.style.display = 'none';
+                ticketPanel.style.display = 'flex';
+                
+                document.getElementById('ticket-header-title').innerText = "Cancellation Refund Query";
+                document.getElementById('ticket-id-tag').innerText = "TKT-382910";
+                document.getElementById('ticket-meta-email').innerText = "john.doe@example.com";
+                document.getElementById('ticket-meta-category').innerText = "Booking Cancellation";
+                document.getElementById('ticket-description-text').innerText = "Customer is requesting full refund on their sedan rental booking in Gainesville. The cancellation request is within the 24-hour buffer window, needing supervisor sales tax audit override.";
+            }
+        }
+
+        // Live takeover WebSocket logic
+        function connectWebSocket() {
+            const sessionInput = document.getElementById('session-id-input');
+            const sessionId = sessionInput.value.trim();
+            if (!sessionId) {
+                alert("Please enter a valid Session ID to connect.");
+                return;
+            }
+
+            if (ws) {
+                ws.close();
+            }
+
+            activeSessionId = sessionId;
+            const messagesArea = document.getElementById('live-chat-messages');
+            
+            // Remove placeholders and add connecting notice
+            messagesArea.innerHTML = `<div class="msg msg-system">Connecting live chat to session: ${sessionId}...</div>`;
+            
+            // Connect to FastAPI ws/admin endpoint
+            ws = new WebSocket(`ws://localhost:8085/ws/admin?session_id=${sessionId}`);
+
+            ws.onopen = () => {
+                document.getElementById('connection-status').innerText = "Connected";
+                document.getElementById('connection-status').style.color = "var(--rdr-success)";
+                
+                // Enable inputs
+                document.getElementById('live-message-input').disabled = false;
+                document.getElementById('send-live-btn').disabled = false;
+
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'msg msg-system';
+                msgDiv.innerText = `WebSocket handshake successful. Live chat session taken over from Junu.`;
+                messagesArea.appendChild(msgDiv);
+            };
+
+            ws.onmessage = (event) => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'msg msg-user';
+                msgDiv.innerHTML = `<strong>Customer:</strong> ${event.data}`;
+                messagesArea.appendChild(msgDiv);
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            };
+
+            ws.onerror = (error) => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'msg msg-system';
+                msgDiv.innerText = `Error connecting to WebSocket server. Ensure port 8000 is open and running.`;
+                messagesArea.appendChild(msgDiv);
+            };
+
+            ws.onclose = () => {
+                document.getElementById('connection-status').innerText = "Disconnected";
+                document.getElementById('connection-status').style.color = "var(--rdr-text-muted)";
+                
+                // Disable inputs
+                document.getElementById('live-message-input').disabled = true;
+                document.getElementById('send-live-btn').disabled = true;
+
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'msg msg-system';
+                msgDiv.innerText = `Takeover WebSocket connection closed. Routing control reverted back to Junu AI.`;
+                messagesArea.appendChild(msgDiv);
+            };
+        }
+
+        function sendLiveMessage() {
+            const input = document.getElementById('live-message-input');
+            const val = input.value.trim();
+            if (!val || !ws) return;
+
+            // Send via WebSocket
+            ws.send(val);
+
+            // Append to admin chat terminal log
+            const messagesArea = document.getElementById('live-chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'msg msg-admin';
+            msgDiv.innerHTML = `<strong>You (Support):</strong> ${val}`;
+            messagesArea.appendChild(msgDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+
+            input.value = "";
+        }
+
+        function sendTicketReply() {
+            const input = document.getElementById('ticket-reply-input');
+            const val = input.value.trim();
+            if (!val) return;
+
+            alert(`Success: Ticket reply sent to user via simulated transactional email. Description: "${val}"`);
+            input.value = "";
+        }
+
+        // Initialize view
+        selectQueue('chat');
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Junu AI Chatbot Sitemap & System Architecture</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --navy-dark: #0f172a;
+            --navy-light: #1e293b;
+            --teal: #ff240d;
+            --text-white: #ffffff;
+            --text-gray: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.45);
+            --border-glow: rgba(255, 36, 13, 0.2);
+            --border-normal: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--navy-dark);
+            background-image: radial-gradient(circle at 5% 5%, rgba(255, 36, 13, 0.04) 0%, transparent 40%),
+                              radial-gradient(circle at 95% 95%, rgba(15, 23, 42, 0.4) 0%, transparent 60%);
+            color: #f1f5f9;
+            margin: 0;
+            padding: 40px;
+            box-sizing: border-box;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            letter-spacing: -1px;
+            color: var(--text-white);
+        }
+
+        .subtitle {
+            color: var(--text-gray);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .grid-blocks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-normal);
+            border-radius: 20px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--teal);
+            box-shadow: 0 12px 30px rgba(255, 36, 13, 0.15);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 14px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-white);
+        }
+
+        .card-num {
+            background: var(--teal);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .card ul {
+            padding-left: 20px;
+            margin: 0;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        .card li {
+            margin-bottom: 8px;
+        }
+
+        /* Sitemap Flow Visualization */
+        .sitemap-visual {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-normal);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--border-glow) 0px 4px 30px;
+        }
+
+        .flow-node-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            position: relative;
+        }
+
+        .node {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-normal);
+            border-radius: 16px;
+            padding: 20px;
+            width: 220px;
+            text-align: center;
+            position: relative;
+        }
+
+        .node h3 {
+            font-size: 15px;
+            margin: 0 0 8px 0;
+            color: var(--text-white);
+        }
+
+        .node p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .node-accent {
+            border-color: var(--teal);
+            box-shadow: 0 0 15px rgba(255, 36, 13, 0.1);
+        }
+
+        .arrow {
+            color: var(--teal);
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arch-diagram-img-box {
+            text-align: center;
+            margin-top: 20px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-normal);
+            background: #000;
+        }
+
+        .arch-diagram-img-box img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .footer-note {
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 13.5px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Junu AI Chatbot Sitemap & Architecture</h1>
+        <div class="subtitle">A comprehensive sitemap, components breakdown, and visual data flow of the chatbot system.</div>
+    </header>
+
+    <div class="container">
+        
+        <!-- visual diagram box -->
+        <div class="sitemap-visual">
+            <h2 style="font-size: 20px; margin: 0 0 20px 0; font-weight: 600; text-align: center;">System Sitemap & Data Flow</h2>
+            <div class="flow-node-wrapper">
+                <div class="node">
+                    <h3>1. User / Guest</h3>
+                    <p>Loads page. If not logged in, interacts as Guest. If logged in, member session token is verified.</p>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node node-accent">
+                    <h3>2. JS Chat Widget</h3>
+                    <p>Handles UI layout. Connects via WebSocket. Initiates guest merge if user logs in mid-session.</p>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                    <h3>3. FastAPI Backend</h3>
+                    <p>Coordinates WebSocket connections, routes user queries to LLM agent, checks timeout events.</p>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node node-accent">
+                    <h3>4. LangChain Agent</h3>
+                    <p>Decides to query inventories, databases, or RAG vectors based on semantic query analysis.</p>
+                </div>
+            </div>
+            
+            <div class="arch-diagram-img-box">
+                <img src="chatbot_architecture_sitemap.png" alt="Chatbot Sitemap & System Architecture Diagram">
+            </div>
+        </div>
+
+        <!-- 4-pillar system breakdown -->
+        <div class="grid-blocks">
+            <div class="card">
+                <h2><span class="card-num">1</span> Frontend Widget (JS)</h2>
+                <ul>
+                    <li><strong>rdr_chatbot.js:</strong> Self-injected script, handles responsive chat window styles and markdown rendering.</li>
+                    <li><strong>WebSocket Manager:</strong> Maintains persistent chat sockets.</li>
+                    <li><strong>Local Storage Cache:</strong> Stores guest session IDs to retrieve past history across refreshes.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h2><span class="card-num">2</span> FastAPI Backend (Python)</h2>
+                <ul>
+                    <li><strong>app.py:</strong> Serves WebSocket endpoints (`/ws/chat` and `/ws/admin`) and session API.</li>
+                    <li><strong>socket_manager.py:</strong> Manages state machine (AI bot, pending takeover, human active, ticket fallback).</li>
+                    <li><strong>ai_engine.py:</strong> LangChain intelligent agent utilizing specialized database tools.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h2><span class="card-num">3</span> MariaDB Vector DB</h2>
+                <ul>
+                    <li><strong>kb_documents:</strong> Tracks corporate policies, versions, and chunk states.</li>
+                    <li><strong>kb_chunk_embeddings:</strong> Stores text snippets with native 768-dim vector embeddings and HNSW indexes.</li>
+                    <li><strong>query_log:</strong> Stores user questions, agent replies, and metrics for analytics.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h2><span class="card-num">4</span> Website DB (Laravel)</h2>
+                <ul>
+                    <li><strong>users:</strong> Selects user profiles for guest authentication and updates.</li>
+                    <li><strong>cars:</strong> Queries inventory to display car listings in rich grid layouts.</li>
+                    <li><strong>support_tickets:</strong> Receives pending support escalations and fallback details.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-note">
+            &copy; 2026 RealDealRide Chatbot Deployment Package. Built for high scalability and secure database orchestration.
+        </div>
+
+    </div>
+
+</body>
+</html>

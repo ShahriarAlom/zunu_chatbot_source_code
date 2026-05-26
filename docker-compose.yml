@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # The MariaDB Vector Database for the Chatbot
+  mariadb_chatbot:
+    image: mariadb:latest
+    container_name: rdr_mariadb_vector
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: realdealride_ai
+    ports:
+      - "3307:3306" # Mapped to 3307 on host so it doesn't conflict with your main Laravel DB
+    volumes:
+      - rdr_ai_data:/var/lib/mysql
+      # This automatically runs our init script on the first startup!
+      - ./requirements/init-mariadb.sql:/docker-entrypoint-initdb.d/init-mariadb.sql
+
+  # The Simulated Live Laravel Database (Bypasses XAMPP completely)
+  laravel_db_simulator:
+    image: mariadb:latest
+    container_name: rdr_laravel_db_simulator
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: rdadmin_dev_realdealride
+      MYSQL_USER: rdadmin_dev
+      MYSQL_PASSWORD: 'b!vq;N}NjFJ1'
+    ports:
+      - "3308:3306" # Mapped to 3308 on host to avoid conflicts
+    volumes:
+      - rdr_laravel_data:/var/lib/mysql
+      # Auto-loads your 22MB SQL dump into the container on startup!
+      - ./realdealride.com/realdealride.com/database.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # The FastAPI Backend
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rdr_fastapi_backend
+    restart: unless-stopped
+    ports:
+      - "8085:8000"
+    environment:
+      - MARIADB_URI=mysql+aiomysql://root:password@mariadb_chatbot:3306/realdealride_ai
+      # Connect directly to the simulator container on port 3306 instead of host.docker.internal
+      - LARAVEL_DB_URI=mysql+aiomysql://rdadmin_dev:b%21vq%3BN%7DNjFJ1@laravel_db_simulator:3306/rdadmin_dev_realdealride
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./requirements/knowledge_Base_doc:/app/knowledge_Base_doc
+    depends_on:
+      - mariadb_chatbot
+      - laravel_db_simulator
+
+volumes:
+  rdr_ai_data:
+  rdr_laravel_data:

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RealDealRide Chatbot Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            padding: 40px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 { color: #0f172a; font-size: 2.5rem; margin-bottom: 1rem; }
+        p { font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem; }
+        .status-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .status-box h3 { margin-top: 0; color: #0f172a; }
+        code { background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chatbot Test Environment</h1>
+        <p>This is a blank page designed solely to test the visual layout and WebSocket connection of the RealDealRide Chatbot.</p>
+        
+        <div class="status-box">
+            <h3>How to test:</h3>
+            <ol>
+                <li>Ensure your backend Docker container is running on <code>localhost:8000</code>.</li>
+                <li>Click the floating chat bubble in the bottom right corner.</li>
+                <li>Type a message like "I need an SUV in Germantown".</li>
+                <li>Watch the fluid grid layout expand and collapse!</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Inject the actual Chatbot JS Script we just built -->
+    <script src="rdr_chatbot.js?v=2"></script>
+</body>
+</html>
