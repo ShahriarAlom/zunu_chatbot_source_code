@@ -1,10 +1,34 @@
 import os
 import uuid
+import jwt
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from socket_manager import manager
 
 app = FastAPI(title="RealDealRide AI Chatbot API")
+
+def verify_jwt_token(token: str) -> dict:
+    """
+    Decodes and verifies a JWT token using the shared JWT_SECRET.
+    Returns the decoded payload if valid, otherwise None.
+    """
+    JWT_SECRET = os.getenv("JWT_SECRET")
+    if not JWT_SECRET:
+        try:
+            return jwt.decode(token, options={"verify_signature": False})
+        except Exception as e:
+            print(f"Error decoding JWT without verification: {e}")
+            return None
+            
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        print("JWT token has expired")
+        return None
+    except jwt.InvalidTokenError as e:
+        print(f"Invalid JWT token: {e}")
+        return None
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,6 +73,7 @@ async def update_knowledge_base(
 async def get_chat_sessions(
     member_id: int = None,
     session_ids: str = None,
+    token: str = None,
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -57,6 +82,16 @@ async def get_chat_sessions(
     from sqlalchemy import select
     from database import ChatSession, QueryLog
     
+    JWT_SECRET = os.getenv("JWT_SECRET")
+    
+    if token:
+        payload = verify_jwt_token(token)
+        if not payload:
+            return []
+        member_id = payload.get("member_id", 0)
+    elif JWT_SECRET and member_id and member_id > 0:
+        return []
+        
     if not member_id and not session_ids:
         return []
         
@@ -90,13 +125,34 @@ async def get_chat_sessions(
     return session_list
 
 @app.get("/chat/history")
-async def get_chat_history(session_id: str, db: AsyncSession = Depends(get_db)):
+async def get_chat_history(
+    session_id: str,
+    token: str = None,
+    db: AsyncSession = Depends(get_db)
+):
     """
     Retrieve full chronological message log for a session.
     """
     from sqlalchemy import select
-    from database import QueryLog
+    from database import ChatSession, QueryLog
     
+    JWT_SECRET = os.getenv("JWT_SECRET")
+    
+    # Retrieve the session record from the database to check ownership
+    result = await db.execute(select(ChatSession).where(ChatSession.session_id == session_id))
+    db_session = result.scalars().first()
+    
+    if not db_session:
+        return []
+        
+    # Enforce security if JWT_SECRET is configured and the session belongs to a registered member
+    if JWT_SECRET and db_session.member_id > 0:
+        if not token:
+            return []
+        payload = verify_jwt_token(token)
+        if not payload or payload.get("member_id", 0) != db_session.member_id:
+            return []
+            
     query = select(QueryLog).where(QueryLog.session_id == session_id).order_by(QueryLog.created_at.asc())
     result = await db.execute(query)
     logs = result.scalars().all()
@@ -126,18 +182,36 @@ async def get_chat_history(session_id: str, db: AsyncSession = Depends(get_db)):
 @app.websocket("/ws/chat")
 async def websocket_chat_endpoint(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
     params = websocket.query_params
+    token = params.get("token")
     session_id = params.get("session_id")
     member_id_str = params.get("member_id")
     guest_session_id = params.get("guest_session_id")
     
+    JWT_SECRET = os.getenv("JWT_SECRET")
+    
+    # 1. Enforce/Handle Token Verification
+    if token:
+        decoded_payload = verify_jwt_token(token)
+        if decoded_payload is None:
+            await websocket.close(code=4001)
+            return
+        member_id = decoded_payload.get("member_id", 0)
+        guest_session_id = decoded_payload.get("guest_session_id")
+        if "session_id" in decoded_payload:
+            session_id = decoded_payload["session_id"]
+    else:
+        try:
+            member_id = int(member_id_str) if member_id_str else 0
+        except ValueError:
+            member_id = 0
+            
+        if JWT_SECRET and member_id > 0:
+            await websocket.close(code=4001)
+            return
+            
     # Generate session_id if client didn't send one
     if not session_id:
         session_id = str(uuid.uuid4())
-        
-    try:
-        member_id = int(member_id_str) if member_id_str else 0
-    except ValueError:
-        member_id = 0
         
     await manager.connect_user(websocket, session_id, db, member_id=member_id, guest_session_id=guest_session_id)
     

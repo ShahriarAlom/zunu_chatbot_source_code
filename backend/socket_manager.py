@@ -73,6 +73,14 @@ class ConnectionManager:
         result = await db.execute(select(ChatSession).where(ChatSession.session_id == session_id))
         db_session = result.scalars().first()
         
+        if db_session:
+            # Enforce that guest or other users cannot hijack an authenticated user's session if JWT_SECRET is configured
+            if os.getenv("JWT_SECRET") and db_session.member_id > 0 and db_session.member_id != member_id:
+                await websocket.close(code=4001)
+                if session_id in self.active_user_connections:
+                    del self.active_user_connections[session_id]
+                return
+                
         if not db_session:
             # Create a new session in DB
             db_session = ChatSession(
@@ -88,6 +96,7 @@ class ConnectionManager:
                 await db.rollback()
                 print(f"Error creating session: {e}")
         else:
+
             # If session exists but member_id changed (e.g. guest logged in)
             if db_session.member_id != member_id:
                 # Store the old member_id to merge support tickets if necessary

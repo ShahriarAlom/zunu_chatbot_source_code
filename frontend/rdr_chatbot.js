@@ -17,6 +17,7 @@
     
     const scriptEl = document.currentScript;
     const memberId = scriptEl ? scriptEl.getAttribute('data-member-id') : null;
+    const jwtToken = scriptEl ? scriptEl.getAttribute('data-jwt-token') : null;
     let currentSessionId = localStorage.getItem('rdr_chat_session_id');
     let guestSessionIds = JSON.parse(localStorage.getItem('rdr_guest_session_ids') || '[]');
     
@@ -611,7 +612,9 @@
         listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b; font-size: 14px;"><div class="spinner-border spinner-border-sm text-info mr-2"></div> Loading sessions...</div>';
         
         let url = `${CHATBOT_URL}/chat/sessions`;
-        if (memberId) {
+        if (jwtToken) {
+            url += `?token=${jwtToken}`;
+        } else if (memberId) {
             url += `?member_id=${memberId}`;
         } else if (guestSessionIds.length > 0) {
             url += `?session_ids=${guestSessionIds.join(',')}`;
@@ -660,7 +663,11 @@
         addMessage("<div class='spinner-border spinner-border-sm text-info'></div> Loading conversation...", 'bot');
         
         try {
-            const res = await fetch(`${CHATBOT_URL}/chat/history?session_id=${sessionId}`);
+            let url = `${CHATBOT_URL}/chat/history?session_id=${sessionId}`;
+            if (jwtToken) {
+                url += `&token=${jwtToken}`;
+            }
+            const res = await fetch(url);
             const historyMessages = await res.json();
             
             messages.innerHTML = '';
@@ -690,6 +697,9 @@
 
     function connectWebSocket() {
         let wsUrl = 'ws://' + CHATBOT_URL.replace('http://', '').replace('https://', '') + '/ws/chat?session_id=' + currentSessionId;
+        if (jwtToken) {
+            wsUrl += '&token=' + jwtToken;
+        }
         if (memberId) {
             wsUrl += '&member_id=' + memberId;
             const lastGuestId = localStorage.getItem('rdr_last_guest_session_id');
