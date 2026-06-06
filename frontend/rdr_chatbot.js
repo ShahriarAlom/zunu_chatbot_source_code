@@ -1,6 +1,6 @@
 (function() {
     // RealDealRide Chatbot Widget - Vanilla JS, No Dependencies
-    const CHATBOT_URL = 'http://72.167.45.2:8085'; // Will be replaced by prod URL
+    const CHATBOT_URL = window.location.origin + '/chat-api';
     
     function generateUUID() {
         try {
@@ -696,7 +696,8 @@
     }
 
     function connectWebSocket() {
-        let wsUrl = 'ws://' + CHATBOT_URL.replace('http://', '').replace('https://', '') + '/ws/chat?session_id=' + currentSessionId;
+        const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        let wsUrl = wsProto + '//' + window.location.host + '/ws/chat?session_id=' + currentSessionId;
         if (jwtToken) {
             wsUrl += '&token=' + jwtToken;
         }
