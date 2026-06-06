@@ -39,7 +39,7 @@ async def search_available_cars(city: str, vehicle_type: str = None, min_price: 
             # Build the query dynamically based on parameters
             query_str = """
                 SELECT c.id, c.make, c.model, c.year, c.vehicle_type, c.price_per_day, c.locality AS city,
-                       c.rating, c.total_trips, c.number_of_seats, c.doors, c.transmission,
+                       c.rating, c.total_trips, c.number_of_seats, c.doors, c.transmission, c.country, c.generate_code,
                        (SELECT id FROM media WHERE model_type LIKE '%Car' AND model_id = c.id ORDER BY id ASC LIMIT 1) AS media_id,
                        (SELECT file_name FROM media WHERE model_type LIKE '%Car' AND model_id = c.id ORDER BY id ASC LIMIT 1) AS media_file_name
                 FROM cars c
@@ -86,7 +86,7 @@ async def search_available_cars(city: str, vehicle_type: str = None, min_price: 
                 # If exact match fails, drop the strict filters (price & type) and suggest ANY available car in the city
                 fallback_str = """
                     SELECT c.id, c.make, c.model, c.year, c.vehicle_type, c.price_per_day, c.locality AS city,
-                           c.rating, c.total_trips, c.number_of_seats, c.doors, c.transmission,
+                           c.rating, c.total_trips, c.number_of_seats, c.doors, c.transmission, c.country, c.generate_code,
                            (SELECT id FROM media WHERE model_type LIKE '%Car' AND model_id = c.id ORDER BY id ASC LIMIT 1) AS media_id,
                            (SELECT file_name FROM media WHERE model_type LIKE '%Car' AND model_id = c.id ORDER BY id ASC LIMIT 1) AS media_file_name
                     FROM cars c
@@ -155,9 +155,16 @@ async def search_available_cars(city: str, vehicle_type: str = None, min_price: 
                 response += f"<span style='background: #F1F5F9; padding: 4px 8px; border-radius: 4px;'>⚙️ {transmission}</span>"
                 response += f"</div>"
                 
+                country = str(car['country']).lower() if car['country'] else "us"
+                make = urllib.parse.quote(str(car['make']).lower()) if car['make'] else "make"
+                model = urllib.parse.quote(str(car['model']).lower()) if car['model'] else "model"
+                year = str(car['year']) if car['year'] else "year"
+                gen_code = urllib.parse.quote(str(car['generate_code'])) if car['generate_code'] else ""
+                detail_url = f"/{country}/car-rental/{make}/{model}/{year}/{gen_code}"
+
                 response += f"<div style='margin-top: auto; padding-top: 12px; border-top: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center;'>"
                 response += f"<div style='font-size: 14px; font-weight: 700; color: #1E293B;'>{price} <span style='font-size: 10px; font-weight: 400; color: #94A3B8;'>/ day</span></div>"
-                response += f"<a href='https://realdealride.com/car/{car['id']}' style='background: #ff240d; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;' target='_blank'>Book</a>"
+                response += f"<a href='{detail_url}' style='background: #ff240d; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;' target='_blank'>Book</a>"
                 response += f"</div>"
                 
                 response += f"</div></div>"
