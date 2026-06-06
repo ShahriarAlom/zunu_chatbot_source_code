@@ -171,3 +171,76 @@ Follow these step-by-step instructions to test all features.
     *   **Action**: Start a new chat as a guest. Ask a policy question (e.g. `What is the minimum age to rent?`). Then, log in by simulating a redirect page update or refreshing the URL with the bypass token: `?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345`.
     *   **Expected Behavior**: The chatbot reconnects under Member ID `22`, automatically merges the guest chat history and queries in the database, and loads the previous visitor queries into your logged-in screen.
 
+---
+
+### Test 8: Inspecting WebSocket Handshakes and JSON Data via Browser DevTools
+
+To verify that the Laravel JSON responses, JWT claims, and WebSocket messages conform exactly to the defined schemas:
+
+#### Step 1: Open Browser Developer Tools
+1. Open your browser (Google Chrome, Microsoft Edge, or Mozilla Firefox).
+2. Right-click anywhere on the page and select **Inspect**, or press `F12` (`Ctrl + Shift + I` / `Cmd + Option + I`).
+3. Click on the **Network** tab at the top of the developer pane.
+
+---
+
+#### Step 2: Inspect WebSocket Handshakes & Parameters
+1. Inside the Network tab, look for the sub-tab filter row (e.g. All, Fetch/XHR, JS, CSS, WS). Click on **WS** (WebSockets) to hide other traffic.
+2. Open the page `test_widget.html?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345`.
+3. In the Network log list, click on the connection named **`chat?session_id=...`**.
+4. In the detailed panel on the right:
+   * Select the **Headers** tab.
+   * Look at the **Request URL**. Verify that it contains:
+     * `session_id`: The auto-generated UUIDv4.
+     * `token`: The bypass token string.
+     * `member_id`: `22`.
+   * Verify that the HTTP status of the handshake is **`101 Switching Protocols`**, confirming a successful connection!
+5. Now, refresh the page with `?member_id=22` (without a token).
+   * Verify that the connection named `chat?session_id=...` fails immediately.
+   * Look at the **Headers** tab. The HTTP status code should be **`403 Forbidden`** (Starlette rejects the handshake because the token is missing and `member_id` is set), and the connection will close with status code `4001`.
+
+---
+
+#### Step 3: Inspect Real-Time Chat & Handoff Frames
+1. Connect successfully using the bypass token.
+2. In the Network pane for the **`chat?session_id=...`** connection, select the **Messages** tab (in Chrome/Edge) or **Frames** tab (in Firefox).
+3. Type a message in the widget (e.g., `Hello`) and press Enter.
+4. You will see a list of sent and received packets:
+   * **Outgoing frame (green arrow up):** Look at the content. It is a raw text string: `"Hello"`.
+   * **Incoming frame (red arrow down):** When the bot answers, a text frame is received. Look at the content. It is a raw text string of the bot response.
+5. In another window, open the Live Support Admin Dashboard mock: `demo/support_admin_dashboard_mock_demo.html`.
+6. Click **"Accept Takeover"** for the active session.
+7. Switch back to your chat widget window and look at the WebSockets **Messages/Frames** tab:
+   * You will see a new incoming frame containing a JSON string.
+   * **JSON structure:**
+     ```json
+     {
+       "role": "system",
+       "content": "System: A customer support agent has joined the chat and taken over."
+     }
+     ```
+   * Verify that the widget has updated its status and displayed the alert in the chat area.
+8. Have the admin type a message (e.g. `How can I help you?`) from the dashboard:
+   * You will see another incoming frame.
+   * **JSON structure:**
+     ```json
+     {
+       "role": "admin",
+       "content": "How can I help you?"
+     }
+     ```
+   * Verify that the widget displays this message in slate color aligned to the left.
+
+---
+
+#### Step 4: Inspect AJAX History & Session REST Endpoints
+1. Click the **History** button in the chat widget header.
+2. In the Developer Tools Network tab, switch back to the **All** or **Fetch/XHR** filter.
+3. You will see a GET request to `/chat/sessions?token=...`.
+   * Click on it and select the **Response** tab.
+   * Verify that it returns a JSON array of sessions matching Section 5.5.A.
+4. Click on one of the past sessions to load history:
+   * You will see a GET request to `/chat/history?session_id=...&token=...`.
+   * Click on it and select the **Response** tab.
+   * Verify that it returns a chronological JSON array of messages matching Section 5.5.B.
+
