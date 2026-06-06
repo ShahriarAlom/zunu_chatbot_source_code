@@ -86,14 +86,15 @@ docker ps
 
 ---
 
-### Step 2.5: Automated Knowledge Base Ingestion & Deduplication
-Instead of manually copying and pasting policy text one file at a time inside the admin dashboard, you can ingest all corporate policy documents in one command:
-1.  Make sure the policy DOCX files are placed in the `requirements/knowledge_Base_doc/` directory.
-2.  Run the following script command inside the running backend container to automatically clean duplicate entries, verify status, and embed any missing policy files:
+### Step 2.5: Automatic Database Auto-Healing & Knowledge Base Ingestion
+To make deployment as smooth as possible, the backend container automatically handles database schema checks and document ingestion on startup:
+1.  **Automatic Schema Healing:** When the FastAPI container starts, it connects to MariaDB and checks the structure of the `kb_chunk_embeddings` and `query_log` tables. If it finds that they exist but are configured with outdated vector dimensions (e.g. `VECTOR(1536)` or `VECTOR(8)`), it automatically runs `ALTER TABLE` commands to update the columns to `VECTOR(768)` to match the Gemini model's outputs. This preserves existing tables and prevents database connection errors.
+2.  **Automated Ingestion:** Immediately after verifying the database, the container launches the `clean_and_reingest.py` script in the background. It automatically scans the `/app/knowledge_Base_doc/` directory, checks for new or modified files, cleans duplicate entries, and embeds any missing documents using the Gemini API.
+3.  **Manual Trigger (Optional):** If you ever need to manually force a cleanup and re-ingest cycle without restarting your containers, you can run:
     ```bash
     docker exec -it rdr_fastapi_backend python clean_and_reingest.py
     ```
-3.  **Free Tier Daily Quota:** Google Gemini API key free tier limits embedding requests to 1000 requests per day. The script automatically handles and retries rate limit exceptions. If you exceed the 1000 daily limit, the remaining documents will fail with quota errors. The database retains the active ones, and you can safely rerun the same command tomorrow to pick up exactly where you left off.
+4.  **Free Tier Daily Quota:** The Google Gemini API key free tier limits embedding requests to 1000 requests per day. The automated ingestion script automatically handles and retries rate limit exceptions. If you exceed the 1000 daily limit, the remaining documents will fail with quota errors. The database retains the active ones, and you can safely restart the container or rerun the manual command tomorrow to pick up exactly where you left off.
 
 ---
 

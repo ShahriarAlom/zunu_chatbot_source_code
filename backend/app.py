@@ -7,6 +7,80 @@ from socket_manager import manager
 
 app = FastAPI(title="RealDealRide AI Chatbot API")
 
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    from database import AsyncSessionLocal
+    from sqlalchemy import text
+    
+    async def run_db_initialization_and_ingestion():
+        print("Waiting for MariaDB to become ready and running startup checks...")
+        
+        # Retry loop to wait for DB to be ready
+        for attempt in range(15):
+            db = AsyncSessionLocal()
+            try:
+                # Check connection
+                await db.execute(text("SELECT 1"))
+                
+                # Check current column definition for 'embedding'
+                res = await db.execute(text("DESCRIBE kb_chunk_embeddings"))
+                columns = res.all()
+                embedding_col = next((c for c in columns if c[0] == 'embedding'), None)
+                
+                # Check current column definition for 'question_embedding' in query_log
+                res_log = await db.execute(text("DESCRIBE query_log"))
+                columns_log = res_log.all()
+                q_embedding_col = next((c for c in columns_log if c[0] == 'question_embedding'), None)
+                
+                need_alter_chunk = False
+                need_alter_log = False
+                
+                if embedding_col:
+                    type_str = str(embedding_col[1]).lower()
+                    if "vector(768)" not in type_str:
+                        need_alter_chunk = True
+                        
+                if q_embedding_col:
+                    type_str_log = str(q_embedding_col[1]).lower()
+                    if "vector(768)" not in type_str_log:
+                        need_alter_log = True
+                        
+                if need_alter_chunk:
+                    print("Detected mismatch in kb_chunk_embeddings.embedding column. Altering to VECTOR(768)...")
+                    await db.execute(text("ALTER TABLE kb_chunk_embeddings MODIFY COLUMN embedding VECTOR(768) NOT NULL"))
+                    await db.commit()
+                    print("Successfully altered kb_chunk_embeddings.embedding to VECTOR(768).")
+                    
+                if need_alter_log:
+                    print("Detected mismatch in query_log.question_embedding column. Altering to VECTOR(768)...")
+                    await db.execute(text("ALTER TABLE query_log MODIFY COLUMN question_embedding VECTOR(768) NULL"))
+                    await db.commit()
+                    print("Successfully altered query_log.question_embedding to VECTOR(768).")
+                
+                # Database is ready and verified! Break the retry loop.
+                await db.close()
+                break
+                
+            except Exception as e:
+                print(f"MariaDB connection attempt {attempt + 1}/15 failed: {e}")
+                await db.close()
+                await asyncio.sleep(4)
+        else:
+            print("ERROR: MariaDB did not become ready in time. Skipping startup checks and ingestion.")
+            return
+
+        # Trigger automatic background ingestion/reingestion
+        print("Starting automated knowledge base ingestion on startup...")
+        from clean_and_reingest import clean_and_reingest
+        try:
+            await clean_and_reingest()
+            print("Automated knowledge base ingestion completed successfully.")
+        except Exception as e:
+            print(f"Error during automated knowledge base ingestion: {e}")
+
+    asyncio.create_task(run_db_initialization_and_ingestion())
+
 def verify_jwt_token(token: str) -> dict:
     """
     Decodes and verifies a JWT token using the shared JWT_SECRET.

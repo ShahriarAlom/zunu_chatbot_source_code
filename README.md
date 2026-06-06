@@ -44,7 +44,7 @@ This package is organized as follows:
 ### B. Admin Panel & Knowledge Base Updates (`/knowledge/update`)
 *   **Plain Text Only (`TXT`):** The admin panel updates the knowledge base by hitting the backend endpoint `/knowledge/update` with a JSON payload containing the document ID and the raw text (`source_text`). 
 *   **The backend only accepts plain text strings** for these updates. It splits the text into chunks, generates vector embeddings, and stores them directly in the MariaDB `kb_chunk_embeddings` table.
-*   *Note: Local `.docx` files are only used during deployment via the `clean_and_reingest.py` CLI script.*
+*   *Note: Local `.docx` files are automatically ingested and embedded in the background on container startup, or can be manually re-run via the `clean_and_reingest.py` CLI script.*
 
 ### C. Live Support Dashboard (`support_admin_dashboard_mock_demo.html`)
 *   Lists active support sessions in a live queue.
