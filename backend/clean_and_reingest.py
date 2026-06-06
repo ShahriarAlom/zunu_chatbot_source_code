@@ -11,6 +11,48 @@ LARAVEL_DB_URL = os.getenv("MARIADB_URI", "mysql+aiomysql://root:password@mariad
 engine = create_async_engine(LARAVEL_DB_URL)
 async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
+async def heal_database_schema(db: AsyncSession):
+    print("Checking database schema for vector dimension alignment...")
+    try:
+        # Check current column definition for 'embedding'
+        res = await db.execute(text("DESCRIBE kb_chunk_embeddings"))
+        columns = res.all()
+        embedding_col = next((c for c in columns if c[0] == 'embedding'), None)
+        
+        # Check current column definition for 'question_embedding' in query_log
+        res_log = await db.execute(text("DESCRIBE query_log"))
+        columns_log = res_log.all()
+        q_embedding_col = next((c for c in columns_log if c[0] == 'question_embedding'), None)
+        
+        need_alter_chunk = False
+        need_alter_log = False
+        
+        if embedding_col:
+            type_str = str(embedding_col[1]).lower()
+            if "vector(768)" not in type_str:
+                need_alter_chunk = True
+                
+        if q_embedding_col:
+            type_str_log = str(q_embedding_col[1]).lower()
+            if "vector(768)" not in type_str_log:
+                need_alter_log = True
+                
+        if need_alter_chunk:
+            print("Detected mismatch in kb_chunk_embeddings.embedding column. Altering to VECTOR(768)...")
+            await db.execute(text("ALTER TABLE kb_chunk_embeddings MODIFY COLUMN embedding VECTOR(768) NOT NULL"))
+            await db.commit()
+            print("Successfully altered kb_chunk_embeddings.embedding to VECTOR(768).")
+            
+        if need_alter_log:
+            print("Detected mismatch in query_log.question_embedding column. Altering to VECTOR(768)...")
+            await db.execute(text("ALTER TABLE query_log MODIFY COLUMN question_embedding VECTOR(768) NULL"))
+            await db.commit()
+            print("Successfully altered query_log.question_embedding to VECTOR(768).")
+            
+    except Exception as e:
+        print(f"Warning: Error checking/altering database schema: {e}")
+        await db.rollback()
+
 async def clean_and_reingest():
     docs_dir = "/app/knowledge_Base_doc"
     docx_files = glob.glob(os.path.join(docs_dir, "*.docx"))
@@ -22,6 +64,9 @@ async def clean_and_reingest():
     print(f"Found {len(docx_files)} documents in local folder.")
     
     async with async_session() as db:
+        # Auto-heal schema if mismatch exists before running ingestion
+        await heal_database_schema(db)
+        
         # Step 1: Clean duplicates in kb_documents
         print("Cleaning duplicate documents in the database...")
         # Get all documents in DB
