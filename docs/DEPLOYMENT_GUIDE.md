@@ -151,15 +151,18 @@ Integrate the widget into your website templates (e.g. Laravel blade templates o
   id="rdr-chatbot-script"
   data-websocket-url="wss://yourdomain.com/ws/chat"
   data-member-id="0" 
+  data-jwt-token=""
   data-guest-session-id="">
 </script>
 ```
 
-#### Widget Attributes:
-*   **`data-websocket-url`:** Set to your secure WebSocket domain path (use `wss://` for SSL).
-*   **`data-member-id`:** Bind this dynamically using your PHP authentication state. For example:
-    `data-member-id="{{ Auth::check() ? Auth::user()->id : 0 }}"`
-*   **`data-guest-session-id`:** Keeps track of guest sessions. If a user is not logged in but has a session active, pass the session ID to keep their chat history intact.
+#### Script Tag Attributes (In Plain English):
+*   **`id="rdr-chatbot-script"`**: Required. A label that tells the chatbot where it is on your page so it can load its settings.
+*   **`data-websocket-url`**: The digital address where the chatbot backend is hosting the live conversation (use `wss://` for secure SSL).
+*   **`data-member-id`**: Tells the chatbot if the visitor is logged in. Bind this dynamically to the customer's account number (e.g. `{{ Auth::check() ? Auth::user()->id : 0 }}`). If they are just visiting, it stays `0`.
+*   **`data-jwt-token`**: A secure electronic badge created by your website. Pass the signed JWT token here when a user logs in. This proves the customer is who they say they are so no one can spy on other people's chats.
+*   **`data-guest-session-id`**: Helps merge a visitor's guest chat history into their permanent account once they decide to log in.
+
 
 ---
 

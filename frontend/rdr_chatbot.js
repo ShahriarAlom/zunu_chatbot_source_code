@@ -735,12 +735,18 @@
                 addMessage(event.data, 'bot');
             }
         };
-        
-        ws.onclose = () => {
-            console.log("Disconnected from Chatbot Server. Trying to reconnect in 3s...");
+        ws.onclose = (event) => {
+            console.log("Disconnected from Chatbot Server. Close code:", event.code);
+            if (event.code === 4001) {
+                console.warn("WebSocket closed due to authentication policy violation. Reconnection stopped.");
+                addMessage("Chat connection closed: Authentication failed. Please verify your credentials or log in again.", "bot");
+                return;
+            }
+            console.log("Trying to reconnect in 3s...");
             setTimeout(connectWebSocket, 3000);
         };
     }
+
 
     function sendMessage() {
         const text = input.value.trim();
