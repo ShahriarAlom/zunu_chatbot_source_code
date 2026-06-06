@@ -213,6 +213,7 @@
             margin: 0;
             line-height: 1.2;
             letter-spacing: -0.2px;
+            color: #ffffff;
         }
 
         #rdr-chat-header-status {

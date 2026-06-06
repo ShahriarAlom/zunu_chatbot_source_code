@@ -39,7 +39,7 @@ async def search_available_cars(city: str, vehicle_type: str = None, min_price: 
             # Build the query dynamically based on parameters
             query_str = """
                 SELECT c.id, c.make, c.model, c.year, c.vehicle_type, c.price_per_day, c.locality AS city,
-                       c.rating, c.total_trips, c.number_of_seats, c.door_cnt, c.transmission,
+                       c.rating, c.total_trips, c.number_of_seats, c.doors, c.transmission,
                        (SELECT id FROM media WHERE model_type LIKE '%Car' AND model_id = c.id ORDER BY id ASC LIMIT 1) AS media_id,
                        (SELECT file_name FROM media WHERE model_type LIKE '%Car' AND model_id = c.id ORDER BY id ASC LIMIT 1) AS media_file_name
                 FROM cars c
@@ -86,7 +86,7 @@ async def search_available_cars(city: str, vehicle_type: str = None, min_price: 
                 # If exact match fails, drop the strict filters (price & type) and suggest ANY available car in the city
                 fallback_str = """
                     SELECT c.id, c.make, c.model, c.year, c.vehicle_type, c.price_per_day, c.locality AS city,
-                           c.rating, c.total_trips, c.number_of_seats, c.door_cnt, c.transmission,
+                           c.rating, c.total_trips, c.number_of_seats, c.doors, c.transmission,
                            (SELECT id FROM media WHERE model_type LIKE '%Car' AND model_id = c.id ORDER BY id ASC LIMIT 1) AS media_id,
                            (SELECT file_name FROM media WHERE model_type LIKE '%Car' AND model_id = c.id ORDER BY id ASC LIMIT 1) AS media_file_name
                     FROM cars c
@@ -136,7 +136,7 @@ async def search_available_cars(city: str, vehicle_type: str = None, min_price: 
                 rating = float(car['rating']) if car['rating'] else 5.0
                 trips = car['total_trips'] if car['total_trips'] else 0
                 seats = car['number_of_seats'] or 5
-                doors = car['door_cnt'] or 4
+                doors = car['doors'] or 4
                 transmission = "Auto" if str(car['transmission']).lower() == 'automatic' else str(car['transmission']).capitalize()
                 
                 response += f"<div class='rdr-car-card' style='background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.05);'>"
