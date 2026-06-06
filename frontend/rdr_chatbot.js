@@ -1,6 +1,6 @@
 (function() {
     // RealDealRide Chatbot Widget - Vanilla JS, No Dependencies
-    const CHATBOT_URL = 'http://localhost:8085'; // Will be replaced by prod URL
+    const CHATBOT_URL = 'http://72.167.45.2:8085'; // Will be replaced by prod URL
     
     function generateUUID() {
         try {

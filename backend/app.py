@@ -38,25 +38,25 @@ async def startup_event():
                 
                 if embedding_col:
                     type_str = str(embedding_col[1]).lower()
-                    if "vector(768)" not in type_str:
+                    if "vector(3072)" not in type_str:
                         need_alter_chunk = True
                         
                 if q_embedding_col:
                     type_str_log = str(q_embedding_col[1]).lower()
-                    if "vector(768)" not in type_str_log:
+                    if "vector(3072)" not in type_str_log:
                         need_alter_log = True
                         
                 if need_alter_chunk:
-                    print("Detected mismatch in kb_chunk_embeddings.embedding column. Altering to VECTOR(768)...")
-                    await db.execute(text("ALTER TABLE kb_chunk_embeddings MODIFY COLUMN embedding VECTOR(768) NOT NULL"))
+                    print("Detected mismatch in kb_chunk_embeddings.embedding column. Altering to VECTOR(3072)...")
+                    await db.execute(text("ALTER TABLE kb_chunk_embeddings MODIFY COLUMN embedding VECTOR(3072) NOT NULL"))
                     await db.commit()
-                    print("Successfully altered kb_chunk_embeddings.embedding to VECTOR(768).")
+                    print("Successfully altered kb_chunk_embeddings.embedding to VECTOR(3072).")
                     
                 if need_alter_log:
-                    print("Detected mismatch in query_log.question_embedding column. Altering to VECTOR(768)...")
-                    await db.execute(text("ALTER TABLE query_log MODIFY COLUMN question_embedding VECTOR(768) NULL"))
+                    print("Detected mismatch in query_log.question_embedding column. Altering to VECTOR(3072)...")
+                    await db.execute(text("ALTER TABLE query_log MODIFY COLUMN question_embedding VECTOR(3072) NULL"))
                     await db.commit()
-                    print("Successfully altered query_log.question_embedding to VECTOR(768).")
+                    print("Successfully altered query_log.question_embedding to VECTOR(3072).")
                 
                 # Database is ready and verified! Break the retry loop.
                 await db.close()

@@ -25,7 +25,7 @@ The database user credentials provided to the chatbot backend must have the foll
 ### B. Chatbot Vector Database Initialization
 The chatbot database requires a special schema with vector support to run semantic searches on policy files:
 1.  On first startup, the Docker container automatically runs the schema script located at [deliverables/requirements/init-mariadb.sql](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/requirements/init-mariadb.sql).
-2.  **Vector Dimensions:** The vector columns (`kb_chunk_embeddings.embedding` and `query_log.question_embedding`) are configured with **`VECTOR(768)`**. This matches the exact output size of Google's `gemini-embedding-001` model. Do not change this dimension size, or the vector database will fail to save embeddings.
+2.  **Vector Dimensions:** The vector columns (`kb_chunk_embeddings.embedding` and `query_log.question_embedding`) are configured with **`VECTOR(3072)`**. While the standard `gemini-embedding-001` specifies a smaller output size, the production environment's LangChain integration generates high-quality **3072-dimensional** embedding vectors. The database auto-healing schema checks automatically ensure that columns are configured with `VECTOR(3072)`.
 3.  **Mock Vector Data:** The 8-dimensional mock vector inserts have been removed from the init script to prevent any database crash during startup. The knowledge base is dynamically ingested using the actual model in **Step 2.5**.
 
 ---
@@ -88,7 +88,7 @@ docker ps
 
 ### Step 2.5: Automatic Database Auto-Healing & Knowledge Base Ingestion
 To make deployment as smooth as possible, the backend container automatically handles database schema checks and document ingestion on startup:
-1.  **Automatic Schema Healing:** When the FastAPI container starts, it connects to MariaDB and checks the structure of the `kb_chunk_embeddings` and `query_log` tables. If it finds that they exist but are configured with outdated vector dimensions (e.g. `VECTOR(1536)` or `VECTOR(8)`), it automatically runs `ALTER TABLE` commands to update the columns to `VECTOR(768)` to match the Gemini model's outputs. This preserves existing tables and prevents database connection errors.
+1.  **Automatic Schema Healing:** When the FastAPI container starts, it connects to MariaDB and checks the structure of the `kb_chunk_embeddings` and `query_log` tables. If it finds that they exist but are configured with outdated vector dimensions (e.g. `VECTOR(768)` or `VECTOR(8)`), it automatically runs `ALTER TABLE` commands to update the columns to `VECTOR(3072)` to match the Gemini model's outputs. This preserves existing tables and prevents database connection errors.
 2.  **Automated Ingestion:** Immediately after verifying the database, the container launches the `clean_and_reingest.py` script in the background. It automatically scans the `/app/knowledge_Base_doc/` directory, checks for new or modified files, cleans duplicate entries, and embeds any missing documents using the Gemini API.
 3.  **Manual Trigger (Optional):** If you ever need to manually force a cleanup and re-ingest cycle without restarting your containers, you can run:
     ```bash
@@ -143,7 +143,7 @@ Copy the JavaScript file **`rdr_chatbot.js`** from `deliverables/frontend/` and 
 *   **Recommended location:** `realdealride.com/public/frontend/js/rdr_chatbot.js`
 
 #### 2. Adding the Script Tag
-Integrate the widget into your website templates (e.g. Laravel blade templates or WordPress themes) by adding this single script tag right before the closing `</body>` tag:
+Integrate the widget into your website templates (e.g. Laravel blade templates or WordPress themes) by adding this single script tag. If you are placing it inside the `<head>` of your page, **you must include the `defer` attribute** to ensure the DOM is fully parsed and `document.body` exists when the script runs:
 
 ```html
 <!-- RealDealRide Junu Chatbot Integration -->
@@ -153,7 +153,8 @@ Integrate the widget into your website templates (e.g. Laravel blade templates o
   data-websocket-url="wss://yourdomain.com/ws/chat"
   data-member-id="0" 
   data-jwt-token=""
-  data-guest-session-id="">
+  data-guest-session-id=""
+  defer>
 </script>
 ```
 

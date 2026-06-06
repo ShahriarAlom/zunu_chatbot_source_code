@@ -44,15 +44,14 @@ services:
       - "8085:8000"
     environment:
       - MARIADB_URI=mysql+aiomysql://root:password@mariadb_chatbot:3306/realdealride_ai
-      # Connect directly to the simulator container on port 3306 instead of host.docker.internal
-      - LARAVEL_DB_URI=mysql+aiomysql://rdadmin_dev:b%21vq%3BN%7DNjFJ1@laravel_db_simulator:3306/rdadmin_dev_realdealride
     env_file:
       - ./backend/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./requirements/knowledge_Base_doc:/app/knowledge_Base_doc
     depends_on:
       - mariadb_chatbot
-      - laravel_db_simulator
 
 volumes:
   rdr_ai_data:
