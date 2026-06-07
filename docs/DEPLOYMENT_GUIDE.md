@@ -403,3 +403,106 @@ The website runs on PHP (Laravel) while the chatbot runs on Python (FastAPI).
 #### D. Why Takeover Uses WebSocket Frames Rather Than HTTP Long Polling
 *   **Real-time Response:** Support agents require immediate, low-latency messaging. Long polling introduces a 1-2 second delay, making real-time customer support frustrating.
 *   **Server Overhead:** Long polling causes hundreds of HTTP connections per minute, overloading the server. WebSockets maintain a single persistent connection, reducing resource utilization.
+
+---
+
+## 6. Laravel Admin Panel: Knowledge Base Integration Guide
+
+This section outlines how to implement the chatbot administration features inside the Laravel Admin Panel to display, edit, upload, or delete knowledge base documents.
+
+### 6.1 Database Connection Configuration
+Since the chatbot's database is hosted on the same VPS, the Laravel application can query the static tables directly.
+
+1. Add a new database connection configuration inside your Laravel `config/database.php` file under the `connections` array:
+   ```php
+   'chatbot_db' => [
+       'driver' => 'mysql',
+       'host' => env('CHATBOT_DB_HOST', '127.0.0.1'),
+       'port' => env('CHATBOT_DB_PORT', '3307'),
+       'database' => env('CHATBOT_DB_DATABASE', 'realdealride_ai'),
+       'username' => env('CHATBOT_DB_USERNAME', 'root'),
+       'password' => env('CHATBOT_DB_PASSWORD', 'password'),
+       'charset' => 'utf8mb4',
+       'collation' => 'utf8mb4_unicode_ci',
+       'prefix' => '',
+       'strict' => true,
+       'engine' => null,
+   ],
+   ```
+2. Configure these variables inside your Laravel `.env` file (pointing to the chatbot container's port, e.g., 3307 or 3306 depending on setup).
+
+### 6.2 Reading and Displaying Documents
+To show a list of all current knowledge base documents inside the Admin Panel, you do **not** need to make HTTP API calls. You can query the database directly.
+
+**Example Laravel Eloquent Query:**
+```php
+// Retrieve all static documents to list on the dashboard
+$documents = DB::connection('chatbot_db')
+    ->table('kb_documents')
+    ->select('document_id', 'title', 'file_name', 'file_size_bytes', 'version', 'status', 'updated_at')
+    ->get();
+```
+Render this list in your Laravel Blade template so that admins can view document metadata, edit, or delete them.
+
+### 6.3 Modifying / Uploading Documents (The HTTP Sync Hook)
+When an administrator edits the text of an existing policy page or uploads a new plain text file, the static database must be updated, and the vector search database must recalculate its embeddings.
+
+1. **Perform Static Update**: Update the static document row in the database table.
+2. **Trigger Vector Rebuild**: Send a single HTTP POST request from Laravel to the FastAPI `/knowledge/update` endpoint to chunk and embed.
+
+**Example Laravel Controller Integration:**
+```php
+use Illuminate\Support\Facades\Http;
+
+public function savePolicyDocument(Request $request, $id)
+{
+    $title = $request->input('title');
+    $text = $request->input('source_text');
+
+    // 1. Update the static row in the chatbot database
+    DB::connection('chatbot_db')
+        ->table('kb_documents')
+        ->where('document_id', $id)
+        ->update([
+            'title' => $title,
+            'source_text' => $text,
+            'status' => 'processing',
+            'updated_at' => now(),
+        ]);
+
+    // 2. Trigger the FastAPI background task to regenerate vector chunks
+    $response = Http::post('https://yourdomain.com/chat-api/knowledge/update', [
+        'document_id' => (int)$id,
+        'source_text' => $text
+    ]);
+
+    if ($response->successful()) {
+        return redirect()->back()->with('success', 'Document updated and vector embeddings regeneration started.');
+    } else {
+        return redirect()->back()->with('error', 'Document saved, but failed to sync with vector database.');
+    }
+}
+```
+
+### 6.4 Deleting Documents (Cascade Sync)
+When a document is deleted, the static plain-text record must be removed, and all of its associated vector search chunks must be cleaned up to remove the document from the chatbot's memory.
+
+The database tables are configured with a foreign key constraint:
+`FOREIGN KEY (document_id) REFERENCES kb_documents(document_id) ON DELETE CASCADE`
+
+Because of this cascading relationship, **no HTTP calls are needed** to delete vector chunks. When Laravel deletes the parent document from the database, MariaDB automatically cleans up all associated vector chunks.
+
+**Example Laravel Deletion Controller:**
+```php
+public function deletePolicyDocument($id)
+{
+    // Deleting the document here automatically triggers MariaDB to CASCADE delete
+    // all corresponding vector embeddings inside 'kb_chunk_embeddings'
+    DB::connection('chatbot_db')
+        ->table('kb_documents')
+        ->where('document_id', $id)
+        ->delete();
+
+    return redirect()->route('admin.chatbot.index')->with('success', 'Document and all vector search memories deleted.');
+}
+```
