@@ -275,6 +275,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: AsyncSession = Depen
     if token:
         decoded_payload = verify_jwt_token(token)
         if decoded_payload is None:
+            await websocket.accept()
             await websocket.close(code=4001)
             return
         member_id = decoded_payload.get("member_id", 0)
@@ -288,6 +289,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: AsyncSession = Depen
             member_id = 0
             
         if JWT_SECRET and member_id > 0:
+            await websocket.accept()
             await websocket.close(code=4001)
             return
             
@@ -295,7 +297,9 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: AsyncSession = Depen
     if not session_id:
         session_id = str(uuid.uuid4())
         
-    await manager.connect_user(websocket, session_id, db, member_id=member_id, guest_session_id=guest_session_id)
+    connected = await manager.connect_user(websocket, session_id, db, member_id=member_id, guest_session_id=guest_session_id)
+    if not connected:
+        return
     
     # Check if there is history in DB for this session
     has_history = len(manager.session_histories.get(session_id, [])) > 0

@@ -79,7 +79,7 @@ class ConnectionManager:
                 await websocket.close(code=4001)
                 if session_id in self.active_user_connections:
                     del self.active_user_connections[session_id]
-                return
+                return False
                 
         if not db_session:
             # Create a new session in DB
@@ -146,6 +146,7 @@ class ConnectionManager:
         
         # Keep only the last 10 messages
         self.session_histories[session_id] = history[-10:]
+        return True
 
     async def disconnect_user(self, session_id: str):
         """Removes a user connection."""
