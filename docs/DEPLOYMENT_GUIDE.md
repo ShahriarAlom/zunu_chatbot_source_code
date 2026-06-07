@@ -1,7 +1,6 @@
 # Junu AI Chatbot: Production Deployment Guide
 
-This guide describes how to deploy the Junu AI Chatbot (Junu) system in your hosting environment. It is written in simple English to make it easy for developers to follow.
-
+This guide describes how to deploy the Junu AI Chatbot (Junu) system in your hosting environment.
 ---
 
 ## 1. System Architecture
