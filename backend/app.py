@@ -264,6 +264,77 @@ async def delete_knowledge_document(id: int, db: AsyncSession = Depends(get_db))
         
     return {"status": "success", "message": f"Document ID {id} and all associated vector chunks deleted."}
 
+@app.get("/knowledge/export")
+async def export_knowledge_documents(db: AsyncSession = Depends(get_db)):
+    """
+    Exposes all knowledge base documents in a structured JSON payload for backup and migration.
+    """
+    from database import KbDocument
+    from sqlalchemy import select
+    
+    result = await db.execute(select(KbDocument).order_by(KbDocument.document_id.asc()))
+    documents = result.scalars().all()
+    
+    return [
+        {
+            "title": doc.title,
+            "source_text": doc.source_text,
+            "file_name": doc.file_name,
+            "version": doc.version
+        }
+        for doc in documents
+    ]
+
+class DocumentImportRequest(BaseModel):
+    title: str
+    source_text: str
+    file_name: str = None
+    version: str = "1.0"
+
+@app.post("/knowledge/import")
+async def import_knowledge_documents(
+    request: list[DocumentImportRequest],
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Accepts a list of documents, creates them in the database, and schedules background embeddings.
+    """
+    from database import KbDocument
+    
+    imported_ids = []
+    for doc in request:
+        file_name = doc.file_name or f"{doc.title.replace(' ', '_').lower()}.txt"
+        db_doc = KbDocument(
+            category_id=5,
+            title=doc.title,
+            file_name=file_name,
+            file_size_bytes=len(doc.source_text.encode('utf-8')),
+            cloudflare_r2_key='local_import',
+            version=doc.version,
+            status='processing',
+            source_text=doc.source_text
+        )
+        db.add(db_doc)
+        await db.commit()
+        await db.refresh(db_doc)
+        
+        # Schedule the background embeddings generation
+        background_tasks.add_task(
+            process_document_background, 
+            document_id=db_doc.document_id, 
+            source_text=doc.source_text, 
+            db=None
+        )
+        imported_ids.append(db_doc.document_id)
+        
+    return {
+        "status": "success",
+        "message": f"Successfully imported {len(request)} documents and started vector embeddings in the background.",
+        "imported_document_ids": imported_ids
+    }
+
+
 @app.get("/chat/sessions")
 async def get_chat_sessions(
     member_id: int = None,

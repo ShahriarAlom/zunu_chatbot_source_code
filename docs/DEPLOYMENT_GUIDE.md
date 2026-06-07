@@ -555,3 +555,159 @@ router.post('/admin/chatbot/delete/:id', async (req, res) => {
 * **Asynchronous Rebuilds:** The `POST /knowledge` REST API endpoint registers a background task in FastAPI to process document chunking and embeddings. This ensures the Laravel admin controller returns instantly without blocking the admin dashboard.
 * **Cascading Delete Constraint:** The database schema has a foreign key constraint linking `kb_chunk_embeddings` to `kb_documents` with `ON DELETE CASCADE`. When a document is removed from `kb_documents` via the `DELETE /knowledge/{id}` endpoint, the database engine automatically cleans up all associated vector chunks, removing the document from the chatbot's active memory.
 
+---
+
+## 5. Migrating and Preserving Custom Knowledge Bases
+
+When running in production, administrators will upload, edit, and delete knowledge base policy documents via the admin panel. These updates are stored inside the chatbot's dedicated MariaDB instance. 
+
+If you migrate the chatbot container to a new server or deploy it to a different website, you must migrate these custom documents so the chatbot does not lose its learned policies. Choose one of the two step-by-step procedures below to export and re-import your custom knowledge base:
+
+---
+
+### Option A: Database-Level Dump & Restore (Recommended for Server Admins)
+
+This option backs up the database tables directly, exporting the document records, metadata, and pre-computed vector chunks. This is the fastest way since it preserves vectors and does not require re-computing embeddings on the new server.
+
+#### To-Do
+
+##### Step 1: Export the Database on the Old Server
+Execute `mariadb-dump` inside the running `rdr_mariadb_vector` container to generate a `.sql` backup file on the host machine:
+```bash
+docker exec rdr_mariadb_vector mariadb-dump -u root -ppassword realdealride_ai > chatbot_backup.sql
+```
+*(Note: Replace `password` with the actual `CHATBOT_DB_PASSWORD` configured in your `.env` file.)*
+
+##### Step 2: Transfer the Backup File
+Use `scp`, `sftp`, or any file transfer tool to upload `chatbot_backup.sql` from your old server to the new server's hosting directory.
+
+##### Step 3: Import the Database on the New Server
+1. Spin up the docker containers on the new server:
+   ```bash
+   docker-compose up -d --build
+   ```
+2. Restore the database backup into the new `rdr_mariadb_vector` container:
+   ```bash
+   docker exec -i rdr_mariadb_vector mariadb -u root -ppassword realdealride_ai < chatbot_backup.sql
+   ```
+3. Restart the FastAPI backend container to reload cached records:
+   ```bash
+   docker restart rdr_fastapi_backend
+   ```
+
+#### Explanation
+* **Pre-Computed Vectors Preservation**: MariaDB stores vectors as binary data. Dumping the database directly preserves the 3072-dimensional arrays. When restored, the new container does not need to communicate with the Gemini API to rebuild the chunks or hit rate limits.
+
+---
+
+### Option B: API-Based Bulk Export & Import (Decoupled & Independent)
+
+This option uses the chatbot's HTTP REST endpoints to export all documents as a JSON payload and re-import them. This is highly portable because it does not require SSH database shell access; your website's admin panel can perform the backup and restore directly using HTTP calls.
+
+#### Generic API Specification
+
+##### 1. Export the Knowledge Base
+* **Method**: `GET`
+* **URL**: `/knowledge/export`
+* **Response**: A JSON array containing all documents, versions, and source texts:
+  ```json
+  [
+    {
+      "title": "Cancellation Policy",
+      "source_text": "All reservations must be cancelled at least 24 hours prior...",
+      "file_name": "cancellation_policy.txt",
+      "version": "1.0"
+    }
+  ]
+  ```
+
+##### 2. Import the Knowledge Base
+* **Method**: `POST`
+* **URL**: `/knowledge/import`
+* **Request Headers**: `Content-Type: application/json`
+* **Request Body**: The JSON array payload exported in the previous step.
+* **Response**:
+  ```json
+  {
+    "status": "success",
+    "message": "Successfully imported 1 documents and started vector embeddings in the background.",
+    "imported_document_ids": [120]
+  }
+  ```
+
+---
+
+#### To-Do (Backend Implementations)
+
+##### PHP (Laravel) Controller Methods
+Add these methods to your admin panel controller to support backup downloads and restores:
+```php
+use Illuminate\Support\Facades\Http;
+
+// 1. Download Backup File
+public function exportBackup()
+{
+    $response = Http::get('https://yourdomain.com/chat-api/knowledge/export');
+    if ($response->successful()) {
+        $jsonContent = json_encode($response->json(), JSON_PRETTY_PRINT);
+        return response($jsonContent)
+            ->header('Content-Type', 'application/json')
+            ->header('Content-Disposition', 'attachment; filename="chatbot_kb_backup.json"');
+    }
+    return redirect()->back()->with('error', 'Failed to export backup.');
+}
+
+// 2. Upload and Restore Backup File
+public function importBackup(Request $request)
+{
+    $file = $request->file('backup_file');
+    $payload = json_decode(file_get_contents($file->getRealPath()), true);
+
+    $response = Http::post('https://yourdomain.com/chat-api/knowledge/import', $payload);
+
+    if ($response->successful()) {
+        return redirect()->back()->with('success', 'Backup uploaded. Background vector indexing has started.');
+    }
+    return redirect()->back()->with('error', 'Failed to restore backup.');
+}
+```
+
+##### Node.js (Express/Axios) Router Methods
+Add these handlers to your Express admin router:
+```javascript
+const axios = require('axios');
+
+// 1. Download Backup File
+router.get('/admin/chatbot/export', async (req, res) => {
+    try {
+        const response = await axios.get('https://yourdomain.com/chat-api/knowledge/export');
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=chatbot_kb_backup.json');
+        res.send(JSON.stringify(response.data, null, 2));
+    } catch (error) {
+        console.error('Failed to export:', error.message);
+        res.redirect('back');
+    }
+});
+
+// 2. Upload and Restore Backup File
+router.post('/admin/chatbot/import', async (req, res) => {
+    if (!req.files || !req.files.backup_file) {
+        return res.status(400).send('No backup file uploaded.');
+    }
+    const payload = JSON.parse(req.files.backup_file.data.toString());
+    try {
+        await axios.post('https://yourdomain.com/chat-api/knowledge/import', payload);
+        req.flash('success', 'Backup restored. Background embedding has started.');
+        res.redirect('/admin/chatbot');
+    } catch (error) {
+        console.error('Failed to import:', error.message);
+        res.redirect('back');
+    }
+});
+```
+
+#### Explanation
+* **Stateless Portability**: Importing documents via the `/knowledge/import` API automatically invokes the background chunking worker inside the chatbot container. This ensures that the new MariaDB database is populated with the correct tables and the vector embeddings are automatically rebuilt using the Gemini API.
+
+
