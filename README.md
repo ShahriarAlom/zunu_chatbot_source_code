@@ -41,11 +41,20 @@ This package is organized as follows:
 *   Embedded at the bottom-right of the web page.
 *   Handles live chatting, loads chat history on reconnect, and seamlessly switches UI styling when an admin takes over the session (styled in real-time as `.rdr-msg-admin` using JSON payloads).
 
-### B. Admin Panel & Knowledge Base Updates (`/knowledge/update`)
-*   **Plain Text Only (`TXT`):** The admin panel updates the knowledge base by hitting the backend endpoint `/knowledge/update` with a JSON payload containing the document ID and the raw text (`source_text`). 
-*   **The backend only accepts plain text strings** for these updates. It splits the text into chunks, generates vector embeddings, and stores them directly in the MariaDB `kb_chunk_embeddings` table.
+### B. Admin Panel & Knowledge Base CRUD (`/knowledge`)
+*   **Fully Decoupled CRUD Endpoints:** The admin panel performs all document operations exclusively via standard HTTP endpoints on the FastAPI backend:
+    *   `GET /knowledge`: Lists all documents and their status.
+    *   `POST /knowledge`: Saves/edits a document and starts background chunking/embeddings.
+    *   `DELETE /knowledge/{id}`: Deletes a document and cascade-purges vector chunks.
+*   **Plain Text Only (`TXT`):** The API accepts plain text strings (`source_text`) for document updates, splits them, generates vector embeddings using the Gemini API, and stores them in MariaDB.
 *   *Note: Local `.docx` files are automatically ingested and embedded in the background on container startup, or can be manually re-run via the `clean_and_reingest.py` CLI script.*
 
 ### C. Live Support Dashboard (`support_admin_dashboard_mock_demo.html`)
 *   Lists active support sessions in a live queue.
 *   Allows agents to view chat logs and click **"Accept Takeover"** to intercept a conversation, routing subsequent messages directly between the agent and customer.
+
+### D. Zero-DB Stateless Handshake
+*   **Zero Database Session Sharing:** The Laravel website and FastAPI chatbot require no shared database access, session tables, or Redis clusters for session handshake.
+*   **Stateless Cryptography:** The website signs user details in-memory using HS256 JWT, and the chatbot verifies the identity in-memory, ensuring absolute portability and backend decoupling.
+*   **Graceful Guest Fallback:** If a verification signature is invalid or expired, the connection falls back gracefully to a guest session instead of disconnecting the user.
+

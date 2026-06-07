@@ -324,7 +324,9 @@ Once the WebSocket is open, messages are transmitted as strings or JSON payloads
   * `member_id` (Integer): Identifies who is chatting to fetch their past bookings.
   * `guest_session_id` (String): Used to find and merge history when a guest logs in.
   * `iat` & `exp` (Integer): Issued-at and expiration timestamps to prevent old token reuse.
-* **Stateless Verification:** Verifying JWT tokens statelessly allows the PHP (Laravel) website to sign credentials in-memory and the Python (FastAPI) backend to verify them in-memory, without sharing session stores or databases.
+* **Zero Database Session Sharing:** The handshake requires no shared Redis, database connections, session tables, or user queries between Laravel and FastAPI. The chatbot backend validates tokens entirely in-memory using the shared secret.
+* **Stateless Cryptography:** By signing claims with HMAC-SHA256, both backends achieve secure verification with zero network roundtrips. Laravel signs the JWT token, and FastAPI verifies it in-memory.
+* **Fully Portable Handshake:** Because the authentication is token-based and stateless, the chatbot widget and connection logic are extremely easy to plug into any other website or backend technology without code modifications.
 * **Fallback to Guest Session:** If the token signature is invalid, tampered with, or expired, the connection is **not** closed. Instead, the backend automatically downgrades the connection to a guest session (`member_id = 0`). This allows users to still chat and ask general FAQs without getting disconnected.
 * **Session Hijack Protection:** If a guest attempts to connect to a specific `session_id` that is already associated in the database with an authenticated user, the backend automatically generates a new random `session_id` to isolate their connection, keeping private logs hidden.
 * **Write Restrictions:** Guest sessions (including guest sessions where an email was entered manually in chat) are restricted from write actions (booking modifications or cancellations) to prevent identity theft. They are only authorized to ask questions and create support tickets.
@@ -334,104 +336,83 @@ Once the WebSocket is open, messages are transmitted as strings or JSON payloads
 
 ## 4. Connecting the Admin Panel to the Knowledge Base
 
-This section describes how your administration panel can query document records directly and sync changes to the chatbot's vector search memory.
+This section describes how your administration panel can perform full CRUD operations on the chatbot's knowledge base using a 100% decoupled REST API, without sharing any database credentials or connections.
 
 ### To-Do
 
-#### Step 1: Add Database Connection
-Add the chatbot database configuration to your website backend.
-* **Where to paste:** Add this block under the `connections` array inside your Laravel database configuration file (`config/database.php`):
-```php
-'chatbot_db' => [
-    'driver' => 'mysql',
-    'host' => env('CHATBOT_DB_HOST', '127.0.0.1'),
-    'port' => env('CHATBOT_DB_PORT', '3307'),
-    'database' => env('CHATBOT_DB_DATABASE', 'realdealride_ai'),
-    'username' => env('CHATBOT_DB_USERNAME', 'root'),
-    'password' => env('CHATBOT_DB_PASSWORD', 'password'),
-    'charset' => 'utf8mb4',
-    'collation' => 'utf8mb4_unicode_ci',
-    'prefix' => '',
-    'strict' => true,
-    'engine' => null,
-],
-```
-* **Environment variables:** Add these keys to your website's `.env` file:
-```env
-CHATBOT_DB_HOST=127.0.0.1
-CHATBOT_DB_PORT=3307
-CHATBOT_DB_DATABASE=realdealride_ai
-CHATBOT_DB_USERNAME=root
-CHATBOT_DB_PASSWORD=password
-```
-
-#### Step 2: Listing the Documents (Admin Dashboard)
-Query the database using Eloquent to display a list of uploaded documents.
-* **Where to place code:** Place this code inside the admin dashboard controller that renders the chatbot settings list view (e.g. `app/Http/Controllers/Admin/ChatbotController.php`):
-```php
-$documents = DB::connection('chatbot_db')
-    ->table('kb_documents')
-    ->select('document_id', 'title', 'file_name', 'file_size_bytes', 'version', 'status', 'updated_at')
-    ->get();
-
-// Pass $documents to your blade view resources/views/admin/chatbot/index.blade.php
-return view('admin.chatbot.index', compact('documents'));
-```
-
-#### Step 3: Saving and Syncing Edits / Uploads
-When an administrator edits policy text or uploads a new plain text file, save the record to the chatbot database and trigger the FastAPI re-ingestion REST API endpoint.
-* **Where to place code:** Place this code inside the store/update form submission method in your admin controller (e.g. `app/Http/Controllers/Admin/ChatbotController.php`):
+#### Step 1: Listing the Documents (Admin Dashboard)
+Query the chatbot's REST API endpoint to retrieve and display a list of all active policy documents.
+* **Where to place code:** Place this code inside the admin dashboard controller that renders the chatbot settings list view (e.g., `app/Http/Controllers/Admin/ChatbotController.php`):
 ```php
 use Illuminate\Support\Facades\Http;
 
-public function savePolicyDocument(Request $request, $id)
+public function index()
+{
+    // Fetch all document records via the chatbot's REST API
+    $response = Http::get('https://yourdomain.com/chat-api/knowledge');
+    
+    $documents = [];
+    if ($response->successful()) {
+        $documents = $response->json();
+    }
+    
+    // Pass $documents to your blade view resources/views/admin/chatbot/index.blade.php
+    return view('admin.chatbot.index', compact('documents'));
+}
+```
+
+#### Step 2: Saving and Updating Documents (Admin Form)
+When an administrator edits policy text or uploads a new plain text file, send a `POST` request to the chatbot's REST API endpoint. The chatbot backend saves the text and automatically handles background chunking/embeddings generation.
+* **Where to place code:** Place this code inside the store/update form submission method in your admin controller (e.g., `app/Http/Controllers/Admin/ChatbotController.php`):
+```php
+use Illuminate\Support\Facades\Http;
+
+public function savePolicyDocument(Request $request, $id = null)
 {
     $title = $request->input('title');
     $text = $request->input('source_text');
+    $version = $request->input('version', '1.0');
 
-    // 1. Update the static row in the chatbot database
-    DB::connection('chatbot_db')
-        ->table('kb_documents')
-        ->where('document_id', $id)
-        ->update([
-            'title' => $title,
-            'source_text' => $text,
-            'status' => 'processing',
-            'updated_at' => now(),
-        ]);
-
-    // 2. Trigger the FastAPI background task to regenerate vector chunks
-    $response = Http::post('https://yourdomain.com/chat-api/knowledge/update', [
-        'document_id' => (int)$id,
-        'source_text' => $text
+    // Trigger the decoupled REST API endpoint (sends document_id if updating)
+    $response = Http::post('https://yourdomain.com/chat-api/knowledge', [
+        'document_id' => $id ? (int)$id : null,
+        'title' => $title,
+        'source_text' => $text,
+        'version' => $version
     ]);
 
     if ($response->successful()) {
-        return redirect()->back()->with('success', 'Document updated and vector embeddings regeneration started.');
+        return redirect()->back()->with('success', 'Document saved and vector embedding started in background.');
     } else {
-        return redirect()->back()->with('error', 'Document saved, but failed to sync with vector database.');
+        return redirect()->back()->with('error', 'Failed to save document via REST API.');
     }
 }
 ```
 
-#### Step 4: Deleting Documents
-When a document is deleted from the admin panel, delete the record from the database.
-* **Where to place code:** Place this code inside the deletion form method in your admin controller (e.g. `app/Http/Controllers/Admin/ChatbotController.php`):
+#### Step 3: Deleting Documents (Admin Form)
+When a document is deleted from the admin panel, send a `DELETE` request to the chatbot's REST API. The chatbot database deletes the record and cascades the deletion to automatically purge all corresponding vector chunks.
+* **Where to place code:** Place this code inside the deletion form method in your admin controller (e.g., `app/Http/Controllers/Admin/ChatbotController.php`):
 ```php
+use Illuminate\Support\Facades\Http;
+
 public function deletePolicyDocument($id)
 {
-    // Deleting the document triggers MariaDB to automatically CASCADE delete
-    // all corresponding vector embeddings inside 'kb_chunk_embeddings'
-    DB::connection('chatbot_db')
-        ->table('kb_documents')
-        ->where('document_id', $id)
-        ->delete();
+    // Trigger the decoupled REST API delete endpoint
+    $response = Http::delete("https://yourdomain.com/chat-api/knowledge/{$id}");
 
-    return redirect()->route('admin.chatbot.index')->with('success', 'Document and all vector search memories deleted.');
+    if ($response->successful()) {
+        return redirect()->route('admin.chatbot.index')->with('success', 'Document and all vector search memories deleted.');
+    } else {
+        return redirect()->back()->with('error', 'Failed to delete document via REST API.');
+    }
 }
 ```
 
 ### Explanation
-* **Direct Database Reading:** Fetching the document metadata table directly from MariaDB bypasses unnecessary API routing, providing instant page load times when admins open the dashboard.
-* **Asynchronous Rebuilds:** Triggering the `POST /knowledge/update` HTTP hook registers a background job on FastAPI, ensuring the Laravel page saves instantly without blocking to wait for embedding generation.
-* **Cascading Delete Constraint:** The database schema has a foreign key constraint linking `kb_chunk_embeddings` to `kb_documents` with `ON DELETE CASCADE`. When a document is removed from `kb_documents`, the database engine automatically cleans up all associated vector chunks, removing the document from the chatbot's memory.
+
+* **100% Decoupled REST API Architecture:** The Laravel application communicates with the chatbot backend solely through HTTP REST endpoints (`GET`, `POST`, `DELETE`). This removes the need for secondary database configuration (`chatbot_db`), keeping the two applications isolated and secure.
+* **Zero Database Session Sharing:** No MariaDB server ports or database credentials need to be exposed to the Laravel application.
+* **Fully Portable:** The admin integration is completely independent of the chatbot's database technology. The chatbot container can be migrated or updated without requiring config changes on the website side.
+* **Asynchronous Rebuilds:** The `POST /knowledge` REST API endpoint registers a background task in FastAPI to process document chunking and embeddings. This ensures the Laravel admin controller returns instantly without blocking the admin dashboard.
+* **Cascading Delete Constraint:** The database schema has a foreign key constraint linking `kb_chunk_embeddings` to `kb_documents` with `ON DELETE CASCADE`. When a document is removed from `kb_documents` via the `DELETE /knowledge/{id}` endpoint, the database engine automatically cleans up all associated vector chunks, removing the document from the chatbot's active memory.
+

@@ -147,9 +147,122 @@ async def update_knowledge_base(
         process_document_background, 
         document_id=request.document_id, 
         source_text=request.source_text, 
-        db=db
+        db=None
     )
     return {"status": "processing", "document_id": request.document_id, "message": "Document chunking and embedding started in background."}
+
+class DocumentCreateRequest(BaseModel):
+    document_id: int = None
+    title: str
+    source_text: str
+    file_name: str = None
+    version: str = "1.0"
+
+@app.get("/knowledge")
+async def list_knowledge_documents(db: AsyncSession = Depends(get_db)):
+    """
+    Exposes all policy documents stored in the database for the Admin Panel list view.
+    """
+    from database import KbDocument
+    from sqlalchemy import select
+    
+    result = await db.execute(select(KbDocument).order_by(KbDocument.created_at.desc()))
+    documents = result.scalars().all()
+    
+    return [
+        {
+            "document_id": doc.document_id,
+            "category_id": doc.category_id,
+            "title": doc.title,
+            "file_name": doc.file_name,
+            "file_size_bytes": doc.file_size_bytes,
+            "version": doc.version,
+            "status": doc.status,
+            "updated_at": doc.updated_at.isoformat() if doc.updated_at else None
+        }
+        for doc in documents
+    ]
+
+@app.post("/knowledge")
+async def create_or_update_document(
+    request: DocumentCreateRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Exposes saving/editing documents for the Admin Panel.
+    Saves document text in database, then triggers background vector embedding in the background.
+    """
+    from database import KbDocument
+    from sqlalchemy import select
+    
+    doc_id = request.document_id
+    file_name = request.file_name or f"{request.title.replace(' ', '_').lower()}.txt"
+    
+    if doc_id:
+        result = await db.execute(select(KbDocument).where(KbDocument.document_id == doc_id))
+        db_doc = result.scalars().first()
+        if not db_doc:
+            return {"status": "error", "message": f"Document ID {doc_id} not found."}
+            
+        db_doc.title = request.title
+        db_doc.file_name = file_name
+        db_doc.version = request.version
+        db_doc.status = 'processing'
+        db_doc.source_text = request.source_text
+        db_doc.file_size_bytes = len(request.source_text.encode('utf-8'))
+        await db.commit()
+    else:
+        db_doc = KbDocument(
+            category_id=5,
+            title=request.title,
+            file_name=file_name,
+            file_size_bytes=len(request.source_text.encode('utf-8')),
+            cloudflare_r2_key='local_import',
+            version=request.version,
+            status='processing',
+            source_text=request.source_text
+        )
+        db.add(db_doc)
+        await db.commit()
+        await db.refresh(db_doc)
+        doc_id = db_doc.document_id
+        
+    background_tasks.add_task(
+        process_document_background, 
+        document_id=doc_id, 
+        source_text=request.source_text, 
+        db=None
+    )
+    
+    return {
+        "status": "processing",
+        "document_id": doc_id,
+        "message": "Document saved and vector chunks embedding started in background."
+    }
+
+@app.delete("/knowledge/{id}")
+async def delete_knowledge_document(id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Exposes document deletion for the Admin Panel.
+    Deletes the document from the database (relying on cascade deletes to purge vector chunks).
+    """
+    from database import KbDocument
+    from sqlalchemy import select, delete
+    
+    result = await db.execute(select(KbDocument).where(KbDocument.document_id == id))
+    db_doc = result.scalars().first()
+    if not db_doc:
+        return {"status": "error", "message": f"Document ID {id} not found."}
+        
+    await db.execute(delete(KbDocument).where(KbDocument.document_id == id))
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        return {"status": "error", "message": f"Failed to delete document: {e}"}
+        
+    return {"status": "success", "message": f"Document ID {id} and all associated vector chunks deleted."}
 
 @app.get("/chat/sessions")
 async def get_chat_sessions(

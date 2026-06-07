@@ -24,12 +24,17 @@ text_splitter = RecursiveCharacterTextSplitter(
     separators=["\n\n", "\n", ".", " ", ""]
 )
 
-async def process_document_background(document_id: int, source_text: str, db: AsyncSession):
+async def process_document_background(document_id: int, source_text: str, db: AsyncSession = None):
     """
     Background task to process a document, chunk it, generate embeddings,
     and atomically insert it into MariaDB.
     """
     print(f"Starting background processing for document {document_id}")
+    
+    db_provided = db is not None
+    if not db_provided:
+        from database import AsyncSessionLocal
+        db = AsyncSessionLocal()
     
     try:
         # Step 0: Save source_text in kb_documents table cell
@@ -95,6 +100,10 @@ async def process_document_background(document_id: int, source_text: str, db: As
                     "vec": vector_json
                 })
         
+        # Step 4: Update status to 'active' upon successful embedding
+        update_status_query = text("UPDATE kb_documents SET status = 'active' WHERE document_id = :doc_id")
+        await db.execute(update_status_query, {"doc_id": document_id})
+        
         # Commit the entire transaction
         await db.commit()
         print(f"Successfully processed and embedded document {document_id}")
@@ -109,3 +118,6 @@ async def process_document_background(document_id: int, source_text: str, db: As
         except Exception as db_err:
             print(f"Failed to update document status to error: {db_err}")
         raise e
+    finally:
+        if not db_provided:
+            await db.close()
