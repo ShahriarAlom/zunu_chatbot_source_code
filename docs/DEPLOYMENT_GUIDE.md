@@ -4,6 +4,21 @@ This guide describes how to deploy the Junu AI Chatbot (Junu) system in your hos
 
 ---
 
+## 🗺️ Plug-and-Play System Architecture Overview
+
+The chatbot is designed with a **100% decoupled, plug-and-play architecture** that allows you to embed it on any website layout and integrate it with any administrative panel backend without sharing database connections or session tables.
+
+![Junu Chatbot System Architecture Map](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/chatbot_architecture_sitemap.png)
+
+### Core Interfaces
+1. **WebSocket Interface (`/ws/chat`)**: Routes all real-time client-to-bot chat interactions, loads historical chat logs on reconnect, and manages live customer support takeover messaging.
+2. **REST API Interface (`/knowledge`)**: Exposes decoupled `GET`, `POST`, and `DELETE` endpoints for managing the knowledge base document records. Your admin dashboard can perform document operations directly over HTTP.
+
+This decoupled layout isolates the databases, allowing the main site to remain completely unaffected by the chatbot's internal MariaDB structure.
+
+---
+
+
 ## 1. Setting Up the Database Connections
 
 ### To-Do
@@ -203,9 +218,9 @@ LARAVEL_DB_URI=mysql+aiomysql://rdadmin_dev:b%21vq%3BN%7DNjFJ1@localhost:3306/rd
 
 ---
 
-## 3. Verifying which user is using the chatbot
+## 3. User Authentication Handshake & Live Support Handoff
 
-This section outlines how to configure secure tokens, handle fallback guest sessions, manage dynamic logins, and structure WebSocket payloads.
+This section outlines how to configure secure tokens, handle fallback guest sessions, manage dynamic logins, structure WebSocket payloads, and handle support agent takeovers and timeouts.
 
 ### To-Do
 
@@ -290,7 +305,7 @@ If your website uses AJAX or Single Page Applications (SPA) where pages do **not
 }
 ```
 
-#### Step 3: Connect via WebSockets
+#### Step 3: Connect via WebSockets (The Handshake)
 To connect, open a WebSocket connection and append the JWT token and parameters to the query string:
 ```
 ws://yourdomain.com/ws/chat?session_id=verification_session_99&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&member_id=22&guest_session_id=89ef6731-92fa-4cb5-b5f7-640be045f2ad
@@ -320,6 +335,15 @@ Once the WebSocket is open, messages are transmitted as strings or JSON payloads
 
 ### Explanation
 
+* **Handshake vs. Live Admin Takeover:**
+  * **The WebSocket Handshake** is client-driven. It establishes a persistent, secure connection between the visitor's browser widget and the FastAPI backend on page load, validating JWT tokens in-memory to authenticate registered users.
+  * **The Admin Takeover** is support-agent driven. It occurs when a customer support representative connects to the `/ws/admin` WebSocket endpoint. The backend switches the session state to route subsequent messages between the agent and user, bypassing the AI engine.
+* **Human Escalation & Ticket Fallback Rules:**
+  * **Escalation Triggers:** If a user requests a human agent ("speak to a human") or the AI returns low confidence, the chatbot triggers handoff.
+  * **Support Ticket Creation:** Upon escalation, the backend automatically logs a ticket in the main website's `support_tickets` database table.
+  * **No Agent Online Fallback (Timeout):** If a customer support agent does not take over the active chat session (e.g., if no agent joins the WebSocket within a standard window of **5 to 10 minutes** or if it is outside office hours), the chatbot outputs a fallback notification to the user:
+    *"All support agents are currently assisting other customers. We have successfully registered support ticket #12345 for you. A support representative will review your chat logs and follow up via email shortly."*
+  * **Session Persistence:** Because the support ticket is linked directly to the database session ID, the agent can open the ticket and read the entire chat transcript, ensuring a smooth customer service experience.
 * **JWT Claims Breakdown:**
   * `member_id` (Integer): Identifies who is chatting to fetch their past bookings.
   * `guest_session_id` (String): Used to find and merge history when a guest logs in.
@@ -338,32 +362,84 @@ Once the WebSocket is open, messages are transmitted as strings or JSON payloads
 
 This section describes how your administration panel can perform full CRUD operations on the chatbot's knowledge base using a 100% decoupled REST API, without sharing any database credentials or connections.
 
-### To-Do
+### Generic REST API Specification
 
-#### Step 1: Listing the Documents (Admin Dashboard)
-Query the chatbot's REST API endpoint to retrieve and display a list of all active policy documents.
-* **Where to place code:** Place this code inside the admin dashboard controller that renders the chatbot settings list view (e.g., `app/Http/Controllers/Admin/ChatbotController.php`):
+#### 1. List All Documents
+* **Method**: `GET`
+* **URL**: `/knowledge`
+* **Response**: A JSON array of document objects:
+  ```json
+  [
+    {
+      "document_id": 114,
+      "category_id": 5,
+      "title": "Cancellation Policy",
+      "file_name": "cancellation_policy.txt",
+      "file_size_bytes": 1024,
+      "version": "1.0",
+      "status": "active",
+      "updated_at": "2026-06-07T04:35:57"
+    }
+  ]
+  ```
+
+#### 2. Create or Update a Document
+* **Method**: `POST`
+* **URL**: `/knowledge`
+* **Request Headers**: `Content-Type: application/json`
+* **Request Body**:
+  ```json
+  {
+    "document_id": 114,
+    "title": "Cancellation Policy",
+    "source_text": "All reservations must be cancelled at least 24 hours prior...",
+    "version": "1.0"
+  }
+  ```
+  *(Note: Omit `document_id` to create a new document, or pass it to update an existing one.)*
+* **Response**:
+  ```json
+  {
+    "status": "processing",
+    "document_id": 114,
+    "message": "Document saved and vector chunks embedding started in background."
+  }
+  ```
+
+#### 3. Delete a Document
+* **Method**: `DELETE`
+* **URL**: `/knowledge/{id}`
+* **Response**:
+  ```json
+  {
+    "status": "success",
+    "message": "Document ID 114 and all associated vector chunks deleted."
+  }
+  ```
+
+---
+
+### To-Do (Backend Implementations)
+
+Choose the implementation below matching your admin panel framework:
+
+#### Option A: Laravel (PHP) Backend Integration
+
+##### Step 1: Listing the Documents (Admin Dashboard)
+* **Where to place code:** Place this code inside your admin controller that renders the settings page:
 ```php
 use Illuminate\Support\Facades\Http;
 
 public function index()
 {
-    // Fetch all document records via the chatbot's REST API
     $response = Http::get('https://yourdomain.com/chat-api/knowledge');
-    
-    $documents = [];
-    if ($response->successful()) {
-        $documents = $response->json();
-    }
-    
-    // Pass $documents to your blade view resources/views/admin/chatbot/index.blade.php
+    $documents = $response->successful() ? $response->json() : [];
     return view('admin.chatbot.index', compact('documents'));
 }
 ```
 
-#### Step 2: Saving and Updating Documents (Admin Form)
-When an administrator edits policy text or uploads a new plain text file, send a `POST` request to the chatbot's REST API endpoint. The chatbot backend saves the text and automatically handles background chunking/embeddings generation.
-* **Where to place code:** Place this code inside the store/update form submission method in your admin controller (e.g., `app/Http/Controllers/Admin/ChatbotController.php`):
+##### Step 2: Saving and Updating Documents (Admin Form)
+* **Where to place code:** Place this code inside the store/update form submission method in your admin controller:
 ```php
 use Illuminate\Support\Facades\Http;
 
@@ -373,7 +449,6 @@ public function savePolicyDocument(Request $request, $id = null)
     $text = $request->input('source_text');
     $version = $request->input('version', '1.0');
 
-    // Trigger the decoupled REST API endpoint (sends document_id if updating)
     $response = Http::post('https://yourdomain.com/chat-api/knowledge', [
         'document_id' => $id ? (int)$id : null,
         'title' => $title,
@@ -382,35 +457,99 @@ public function savePolicyDocument(Request $request, $id = null)
     ]);
 
     if ($response->successful()) {
-        return redirect()->back()->with('success', 'Document saved and vector embedding started in background.');
+        return redirect()->back()->with('success', 'Document saved and vector embedding started.');
     } else {
         return redirect()->back()->with('error', 'Failed to save document via REST API.');
     }
 }
 ```
 
-#### Step 3: Deleting Documents (Admin Form)
-When a document is deleted from the admin panel, send a `DELETE` request to the chatbot's REST API. The chatbot database deletes the record and cascades the deletion to automatically purge all corresponding vector chunks.
-* **Where to place code:** Place this code inside the deletion form method in your admin controller (e.g., `app/Http/Controllers/Admin/ChatbotController.php`):
+##### Step 3: Deleting Documents (Admin Form)
+* **Where to place code:** Place this code inside the deletion form method in your admin controller:
 ```php
 use Illuminate\Support\Facades\Http;
 
 public function deletePolicyDocument($id)
 {
-    // Trigger the decoupled REST API delete endpoint
     $response = Http::delete("https://yourdomain.com/chat-api/knowledge/{$id}");
 
     if ($response->successful()) {
-        return redirect()->route('admin.chatbot.index')->with('success', 'Document and all vector search memories deleted.');
+        return redirect()->route('admin.chatbot.index')->with('success', 'Document deleted.');
     } else {
         return redirect()->back()->with('error', 'Failed to delete document via REST API.');
     }
 }
 ```
 
+---
+
+#### Option B: Node.js (Express/Axios) Backend Integration
+
+##### Step 1: Listing the Documents (Admin Dashboard)
+* **Where to place code:** Place this code inside your Express router handler:
+```javascript
+const axios = require('axios');
+
+router.get('/admin/chatbot', async (req, res) => {
+    try {
+        const response = await axios.get('https://yourdomain.com/chat-api/knowledge');
+        const documents = response.data;
+        res.render('admin/chatbot/index', { documents });
+    } catch (error) {
+        console.error('Failed to fetch documents:', error.message);
+        res.render('admin/chatbot/index', { documents: [], error: 'Failed to retrieve documents.' });
+    }
+});
+```
+
+##### Step 2: Saving and Updating Documents (Admin Form)
+* **Where to place code:** Place this code inside your store/update POST router handler:
+```javascript
+const axios = require('axios');
+
+router.post('/admin/chatbot/save', async (req, res) => {
+    const { document_id, title, source_text, version } = req.body;
+    try {
+        await axios.post('https://yourdomain.com/chat-api/knowledge', {
+            document_id: document_id ? parseInt(document_id) : null,
+            title,
+            source_text,
+            version: version || '1.0'
+        });
+        req.flash('success', 'Document saved and vector embedding started.');
+        res.redirect('/admin/chatbot');
+    } catch (error) {
+        console.error('Failed to save document:', error.message);
+        req.flash('error', 'Failed to save document via REST API.');
+        res.redirect('back');
+    }
+});
+```
+
+##### Step 3: Deleting Documents (Admin Form)
+* **Where to place code:** Place this code inside your Express deletion router handler:
+```javascript
+const axios = require('axios');
+
+router.post('/admin/chatbot/delete/:id', async (req, res) => {
+    const docId = req.params.id;
+    try {
+        await axios.delete(`https://yourdomain.com/chat-api/knowledge/${docId}`);
+        req.flash('success', 'Document and vector memories deleted.');
+        res.redirect('/admin/chatbot');
+    } catch (error) {
+        console.error('Failed to delete document:', error.message);
+        req.flash('error', 'Failed to delete document via REST API.');
+        res.redirect('back');
+    }
+});
+```
+
+---
+
 ### Explanation
 
-* **100% Decoupled REST API Architecture:** The Laravel application communicates with the chatbot backend solely through HTTP REST endpoints (`GET`, `POST`, `DELETE`). This removes the need for secondary database configuration (`chatbot_db`), keeping the two applications isolated and secure.
+* **100% Decoupled REST API Architecture:** The admin panel communicates with the chatbot backend solely through HTTP REST endpoints (`GET`, `POST`, `DELETE`). This removes the need for secondary database configuration (`chatbot_db`), keeping the two applications isolated and secure.
 * **Zero Database Session Sharing:** No MariaDB server ports or database credentials need to be exposed to the Laravel application.
 * **Fully Portable:** The admin integration is completely independent of the chatbot's database technology. The chatbot container can be migrated or updated without requiring config changes on the website side.
 * **Asynchronous Rebuilds:** The `POST /knowledge` REST API endpoint registers a background task in FastAPI to process document chunking and embeddings. This ensures the Laravel admin controller returns instantly without blocking the admin dashboard.

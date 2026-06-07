@@ -4,6 +4,20 @@ Welcome to the Junu AI Chatbot deliverables package. This folder contains all th
 
 ---
 
+## 🗺️ Plug-and-Play System Architecture Overview
+
+The chatbot is designed with a **100% decoupled, plug-and-play architecture** that allows you to embed it on any website layout and integrate it with any administrative panel backend without sharing database connections or session tables.
+
+![Junu Chatbot System Architecture Map](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/chatbot_architecture_sitemap.png)
+
+### Core Interfaces
+1. **WebSocket Interface (`/ws/chat`)**: Routes all real-time client-to-bot chat interactions, loads historical chat logs on reconnect, and manages live customer support takeover messaging.
+2. **REST API Interface (`/knowledge`)**: Exposes decoupled `GET`, `POST`, and `DELETE` endpoints for managing the knowledge base document records. Your admin dashboard can perform document operations directly over HTTP.
+
+This decoupled layout isolates the databases, allowing the main site to remain completely unaffected by the chatbot's internal MariaDB structure.
+
+---
+
 ## 📂 Deliverables Directory Map
 
 This package is organized as follows:
@@ -32,6 +46,11 @@ This package is organized as follows:
 ### 5. 🧪 Testing & Demos (`/demo`)
 *   **`test_widget.html`:** A simple HTML sandbox file used to run, preview, and test the chat widget locally.
 *   **`support_admin_dashboard_mock_demo.html`:** A dummy mock dashboard showing how an admin takeover panel interfaces with the WebSocket admin endpoint (`/ws/admin`).
+
+### 6. 🛠️ Website Code Alterations (`/laravel-scripts-changed-for-chatbot-deployment`)
+*   **[README.md](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/laravel-scripts-changed-for-chatbot-deployment/README.md):** Detailed tracking file mapping exactly which files and lines were modified or created inside the Laravel repository.
+*   **`app/Helpers/ChatbotHelper.php`**: Reference PHP helper class generating JWT tokens.
+*   **`resources/views/layouts/`**: Reference Blade layouts containing chatbot script injections and Dialogflow comment-outs.
 
 ---
 

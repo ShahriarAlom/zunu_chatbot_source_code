@@ -19,8 +19,10 @@ The Junu AI Chatbot is built using **FastAPI** (Python backend), **LangGraph** (
 
 ### B. Policy Knowledge Base QA (Vector RAG)
 *   **How it works:** Users can ask questions about rental policies (minimum age, deposit rules, cancellation policies, etc.).
+*   **Decoupled Administration (REST API):**
+    *   Administrative CRUD operations (listing, creating, updating, and deleting policy documents) are performed exclusively over standard HTTP endpoints (`GET`, `POST`, `DELETE` `/knowledge`) exposed by the FastAPI backend, decoupling the website from the chatbot database.
 *   **Database Interaction:**
-    *   PDF policy documents are split into text chunks, embedded into 768-dimensional float arrays via Google's `gemini-embedding-001` model, and stored in the chatbot's `kb_chunk_embeddings` table.
+    *   PDF/TXT policy documents are split into text chunks, embedded into 3072-dimensional arrays via Google's `gemini-embedding-001` model, and stored in the chatbot's `kb_chunk_embeddings` table.
     *   When a user asks a question, the chatbot embeds the query and runs a vector cosine similarity search (`VEC_DISTANCE`) directly inside MariaDB:
         ```sql
         SELECT chunk_text, VEC_DISTANCE(embedding, VEC_FromText(:query_vec)) AS distance 
@@ -77,11 +79,14 @@ The chatbot reads and writes directly to these Laravel tables:
 ### Database 2: Chatbot Database (`realdealride_ai`)
 A dedicated MariaDB instance containing:
 *   `chat_sessions`: Tracks active sessions, user IDs, platforms, and handoff states.
-*   `query_log`: Logs every user message, AI answer, confidence score, and a 768-dimensional `question_embedding` vector.
-*   `kb_chunk_embeddings`: Stores text chunks and their 768-dimensional `embedding` vectors.
+*   `query_log`: Logs every user message, AI answer, confidence score, and a 3072-dimensional `question_embedding` vector.
+*   `kb_chunk_embeddings`: Stores text chunks and their 3072-dimensional `embedding` vectors.
 *   `kb_documents`: Tracks uploaded policy files, versions, and sizes.
 *   `escalations`: Records escalated sessions and waiting times.
 *   `daily_metrics`: Stores daily analytics (total queries, response times, satisfaction scores).
+
+> [!NOTE]
+> **Complete Database Isolation**: The Laravel administration panel does NOT connect directly to `realdealride_ai`. All document additions, updates, listings, and deletions are performed via HTTP requests to the decoupled FastAPI REST API, which manages Database 2 internally.
 
 ---
 
@@ -241,9 +246,30 @@ To verify that the Laravel JSON responses, JWT claims, and WebSocket messages co
 2. In the Developer Tools Network tab, switch back to the **All** or **Fetch/XHR** filter.
 3. You will see a GET request to `/chat/sessions?token=...`.
    * Click on it and select the **Response** tab.
-   * Verify that it returns a JSON array of sessions matching Section 5.5.A.
+   * Verify that it returns a JSON array of sessions.
 4. Click on one of the past sessions to load history:
    * You will see a GET request to `/chat/history?session_id=...&token=...`.
    * Click on it and select the **Response** tab.
-   * Verify that it returns a chronological JSON array of messages matching Section 5.5.B.
+   * Verify that it returns a chronological JSON array of messages.
+
+---
+
+### Test 9: Decoupled REST API CRUD Operations (Knowledge Base)
+
+To verify that the administrative REST API is working correctly and allows full decoupled CRUD operations:
+
+#### Step 1: Run the Automated Validation Script
+1. Connect to the VPS via SSH.
+2. Execute the verification script inside the `rdr_fastapi_backend` container:
+   ```bash
+   sudo docker exec rdr_fastapi_backend python /app/test_vps_api_crud.py
+   ```
+
+#### Step 2: Verify the Test Logs and Output
+Ensure that the stdout logs display successful responses for all CRUD steps:
+* **GET /knowledge (List)**: Returns list of active policy documents.
+* **POST /knowledge (Create)**: Saves a new test document, returns `status: "processing"`, and initiates background embedding.
+* **GET /knowledge (Status check)**: Successfully polls the status and waits until it becomes `active`.
+* **DELETE /knowledge/{id} (Delete)**: Removes the document from the database, returning `status: "success"`.
+* **GET /knowledge (Verification check)**: Verifies the document has been completely deleted.
 
