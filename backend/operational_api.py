@@ -244,8 +244,8 @@ async def create_support_ticket(member_id: int, subject: str, description: str, 
             if not category:
                 # Insert a default category
                 insert_cat = """
-                    INSERT INTO support_categories (id, support_id, name, description, type, status, sort_order)
-                    VALUES (1, 'GEN-SUP', 'General Support', 'Default category for chatbot support tickets', 'pre-trip', 'active', 0)
+                    INSERT INTO support_categories (id, name, description, status, sort_order, created_at, updated_at)
+                    VALUES (1, 'General Support', 'Default category for chatbot support tickets', 'active', 0, NOW(), NOW())
                 """
                 await db.execute(text(insert_cat))
                 await db.commit()
