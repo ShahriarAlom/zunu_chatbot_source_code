@@ -95,8 +95,12 @@ A dedicated MariaDB instance containing:
 Follow these step-by-step instructions to test all features.
 
 ### Setup Before Testing
-1.  Open the local chatbot widget sandbox by opening **`demo/test_widget.html`** in your browser.
-2.  Open the Support Admin Dashboard Mock Demo by opening **`demo/support_admin_dashboard_mock_demo.html`** in another browser window to monitor takeover and ticket events.
+1.  **Open the local chatbot widget sandbox:** Open **`demo/test_widget.html`** in your browser.
+2.  **Open the Support Admin Dashboard Mock Demo:** Open **`demo/support_admin_dashboard_mock_demo.html`** in another browser window to monitor takeover and ticket events.
+3.  **Simulate a Logged-in User Session (Testing Token):**
+    To test member-restricted features (like checking reservation status, cancellations, or modifications) without setting up a JWT token signer on your site, append the following query parameters to your browser's address bar when opening `test_widget.html`:
+    `?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345`
+    *   **How it works:** The backend automatically recognizes this bypass token and logs you in as Member ID `22`, granting full access to member queries. Guests who connect without a token are treated as guest sessions and restricted from booking modifications.
 
 ---
 
