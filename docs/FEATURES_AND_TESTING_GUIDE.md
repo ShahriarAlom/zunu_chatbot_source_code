@@ -157,19 +157,22 @@ Follow these step-by-step instructions to test all features.
 
 ### Test 7: JWT Security & Connection Policy Verification (Bypass Token Demo)
 
-*   **Setup**: Ensure `JWT_SECRET` is set in the chatbot backend `.env` file and the backend container is running.
-*   **Test 7.1: Block Unauthenticated Member Connections**
-    *   **Action**: Open `test_widget.html` with query parameters `?member_id=22` (simulating a member user without a JWT token).
-    *   **Expected Behavior**: The connection is rejected. The widget stops retrying, and the chat screen displays: *"Chat connection closed: Authentication failed. Please verify your credentials or log in again."*
-*   **Test 7.2: Verify Guest Access Without Tokens**
-    *   **Action**: Open `test_widget.html` with no query parameters (guest visitor).
-    *   **Expected Behavior**: The connection succeeds immediately. The bot greets you: *"Hi there! 👋 I'm Junu..."* Guests can chat and ask general questions without a token.
-*   **Test 7.3: Authenticated User Login (Bypass Token)**
-    *   **Action**: Open `test_widget.html` with query parameters `?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345` (simulating a successful Laravel site login).
-    *   **Expected Behavior**: The connection succeeds immediately. The bot will load your past conversations for member `22` and welcome you. You will have full access to reservation status and booking cancelations.
-*   **Test 7.4: Guest Session Merging**
-    *   **Action**: Start a new chat as a guest. Ask a policy question (e.g. `What is the minimum age to rent?`). Then, log in by simulating a redirect page update or refreshing the URL with the bypass token: `?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345`.
-    *   **Expected Behavior**: The chatbot reconnects under Member ID `22`, automatically merges the guest chat history and queries in the database, and loads the previous visitor queries into your logged-in screen.
+* **Setup**: Ensure `JWT_SECRET` is set in the chatbot backend `.env` file and the backend container is running.
+* **Test 7.1: Guest Fallback for Unauthenticated Member Claims**
+    * **Action**: Open `test_widget.html` with query parameters `?member_id=22` (simulating a member connection attempt without a valid token).
+    * **Expected Behavior**: The connection succeeds. However, because no valid token is provided, the backend downgrades the connection to a guest session (`member_id = 0`). The user can chat and search general policies, but is restricted from checking booking status or initiating cancellations.
+* **Test 7.2: Verify Guest Access Without Tokens**
+    * **Action**: Open `test_widget.html` with no query parameters (guest visitor).
+    * **Expected Behavior**: The connection succeeds immediately. The bot greets you: *"Hi there! 👋 I'm Junu..."* Guests can chat and ask general questions without a token.
+* **Test 7.3: Authenticated User Login (Bypass Token)**
+    * **Action**: Open `test_widget.html` with query parameters `?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345` (simulating a successful Laravel site login).
+    * **Expected Behavior**: The connection succeeds immediately. The bot loads past conversations for member `22` and welcomes you. You have full access to reservation status and booking modifications.
+* **Test 7.4: Guest Session Merging**
+    * **Action**: Start a new chat as a guest. Ask a policy question (e.g. `What is the minimum age to rent?`). Then, log in by simulating a redirect page update or refreshing the URL with the bypass token: `?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345`.
+    * **Expected Behavior**: The chatbot reconnects under Member ID `22`, automatically merges the guest chat history and queries in the database, and loads the previous visitor queries into your logged-in screen.
+* **Test 7.5: Session Hijack Protection & Isolation**
+    * **Action**: Access another member's active session ID (e.g. `?session_id=member_session_abc` where session `member_session_abc` is owned in the database by member `22`) without providing a valid JWT token.
+    * **Expected Behavior**: The connection succeeds. However, since the client has no proof of ownership, the backend automatically generates a brand-new random `session_id` to isolate the connection. This prevents the visitor from viewing the member's private chat logs, while still allowing them to chat safely as an anonymous guest.
 
 ---
 

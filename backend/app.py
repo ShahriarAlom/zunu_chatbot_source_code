@@ -271,31 +271,38 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: AsyncSession = Depen
     
     JWT_SECRET = os.getenv("JWT_SECRET")
     
-    # 1. Enforce/Handle Token Verification
+    # 1. Decode and verify JWT token if provided
+    member_id = 0
     if token:
         decoded_payload = verify_jwt_token(token)
-        if decoded_payload is None:
-            await websocket.accept()
-            await websocket.close(code=4001)
-            return
-        member_id = decoded_payload.get("member_id", 0)
-        guest_session_id = decoded_payload.get("guest_session_id")
-        if "session_id" in decoded_payload:
-            session_id = decoded_payload["session_id"]
-    else:
-        try:
-            member_id = int(member_id_str) if member_id_str else 0
-        except ValueError:
+        if decoded_payload is not None:
+            member_id = decoded_payload.get("member_id", 0)
+            guest_session_id = decoded_payload.get("guest_session_id")
+            if "session_id" in decoded_payload:
+                session_id = decoded_payload["session_id"]
+        else:
+            print("Token validation failed. Downgrading connection to guest session.")
             member_id = 0
-            
-        if JWT_SECRET and member_id > 0:
-            await websocket.accept()
-            await websocket.close(code=4001)
-            return
+    else:
+        # No token provided. Treat as guest (member_id = 0) to prevent spoofing
+        member_id = 0
             
     # Generate session_id if client didn't send one
     if not session_id:
         session_id = str(uuid.uuid4())
+    else:
+        # Check if the session belongs to a registered member.
+        # If it does, and the incoming connection is not that member, isolate them.
+        from database import ChatSession
+        from sqlalchemy import select
+        try:
+            result = await db.execute(select(ChatSession).where(ChatSession.session_id == session_id))
+            db_session = result.scalars().first()
+            if db_session and db_session.member_id > 0 and db_session.member_id != member_id:
+                print(f"Session {session_id} belongs to member {db_session.member_id}, but incoming connection is {member_id}. Isolating to new guest session.")
+                session_id = str(uuid.uuid4())
+        except Exception as e:
+            print(f"Error checking session ownership: {e}")
         
     connected = await manager.connect_user(websocket, session_id, db, member_id=member_id, guest_session_id=guest_session_id)
     if not connected:

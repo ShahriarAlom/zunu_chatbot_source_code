@@ -74,9 +74,8 @@ class ConnectionManager:
         db_session = result.scalars().first()
         
         if db_session:
-            # Enforce that guest or other users cannot hijack an authenticated user's session if JWT_SECRET is configured
-            if os.getenv("JWT_SECRET") and db_session.member_id > 0 and db_session.member_id != member_id:
-                await websocket.close(code=4001)
+            # Enforce that guest or other users cannot hijack an authenticated user's session
+            if db_session.member_id > 0 and db_session.member_id != member_id:
                 if session_id in self.active_user_connections:
                     del self.active_user_connections[session_id]
                 return False

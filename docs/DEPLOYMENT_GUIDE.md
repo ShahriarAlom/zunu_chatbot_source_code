@@ -332,11 +332,8 @@ Once connected, send message payloads based on context:
 
 ### Explanation
 
-* **JWT Verification Policy:** The chatbot backend validates the signature of the incoming JWT token against its own `JWT_SECRET`. If a client attempts to connect with `member_id` > 0 but lacks a valid signed token, the connection is instantly rejected with Close Code `4001`.
-* **Parameter Breakdown:**
-  * `member_id`: The ID of the authenticated user.
-  * `guest_session_id`: Passed after login to trigger a database merge of the customer's guest conversation history into their member profile.
-  * `iat` & `exp`: UNIX timestamps preventing old token reuse.
+* **Verification Mismatches and Fallback:** If a client provides a JWT token that fails validation (due to expiration, invalid signature, or tampering), the connection is **not** closed. Instead, the backend automatically downgrades the session to a guest session (`member_id = 0`). This ensures the user can still chat and search general rental policies (Q&A/FAQs) as a guest without getting disconnected.
+* **Session Hijack Protection:** If a guest connects requesting a specific `session_id` that is already registered to an authenticated user, the backend generates a new random `session_id` for the connection. This isolates the guest's conversation history from the member's private logs.
 * **Separated Decoupled Services:** Signing JWTs statelessly allows a PHP (Laravel) website and a Python (FastAPI) backend to securely authorize users without requiring shared database session tables or cross-domain cookies.
 * **Authentication Restrictions for Guest Sessions:** When a guest user enters their email manually in the chat, the chatbot queries user metadata to personalize the conversation. However, since there is no JWT signature verifying their identity, **write permissions** (booking modification or cancellation actions) are disabled to protect against identity theft. Guests are restricted to general FAQs and support ticket creation.
 * **WebSocket-Based Handoff:** System handovers are delivered via JSON WebSocket frames to enable instantaneous UI layout adjustments and low-latency messages when live agents override chatbot control.
