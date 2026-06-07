@@ -527,32 +527,13 @@
         // Clear screen and show default message
         messages.innerHTML = '<div class="rdr-msg rdr-msg-bot">Hi there! 👋 I\'m Junu, your RealDealRide AI Assistant. How can I help you with your booking today?</div>';
         historyPanel.classList.remove('open');
+        windowEl.classList.remove('expanded');
         
         // Reconnect WebSocket
         reconnectWebSocket();
     });
 
-    // Intersection Observer for Fluid Grid Expansion
-    const visibleGrids = new Set();
-    const gridObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                visibleGrids.add(entry.target);
-            } else {
-                visibleGrids.delete(entry.target);
-            }
-        });
-        
-        // If any grid is even slightly visible in the chat window, expand it!
-        if (visibleGrids.size > 0) {
-            windowEl.classList.add('expanded');
-        } else {
-            windowEl.classList.remove('expanded');
-        }
-    }, {
-        root: messages,
-        threshold: 0.01
-    });
+    // Expanded window state helper is updated on message render and cleared on session reset.
 
     function addMessage(text, sender) {
         if (sender === 'assistant') sender = 'bot';
@@ -577,6 +558,7 @@
         // If the message contains a grid, remove the standard chat bubble styling
         // so the cards can expand to full width and we remove the ugly secondary background!
         if (text.includes('rdr-car-grid')) {
+            windowEl.classList.add('expanded');
             msg.style.maxWidth = '100%';
             msg.style.width = '100%';
             msg.style.background = 'transparent';
@@ -600,12 +582,6 @@
         
         messages.appendChild(msg);
         messages.scrollTop = messages.scrollHeight;
-
-        // Watch for grids in this new message
-        const grids = msg.querySelectorAll('.rdr-car-grid');
-        grids.forEach(grid => {
-            gridObserver.observe(grid);
-        });
     }
 
     async function loadHistoryList() {
@@ -656,6 +632,7 @@
     }
 
     async function selectSession(sessionId) {
+        windowEl.classList.remove('expanded');
         historyPanel.classList.remove('open');
         currentSessionId = sessionId;
         localStorage.setItem('rdr_chat_session_id', currentSessionId);
