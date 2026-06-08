@@ -502,11 +502,13 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: AsyncSession = Depen
         await websocket.send_text("Welcome back! 👋 I'm Junu. I've loaded your previous conversation. How can I help you today?")
     
     try:
+        from database import AsyncSessionLocal
         while True:
             # Wait for user message
             user_message = await websocket.receive_text()
             db_session_status = "human_active" if session_id in manager.active_admin_connections else "bot"
-            await manager.route_message_from_user(session_id, user_message, db_session_status, db, member_id=member_id)
+            async with AsyncSessionLocal() as message_db:
+                await manager.route_message_from_user(session_id, user_message, db_session_status, message_db, member_id=member_id)
             
     except WebSocketDisconnect:
         await manager.disconnect_user(session_id)
@@ -528,9 +530,11 @@ async def websocket_admin_endpoint(websocket: WebSocket, db: AsyncSession = Depe
         await user_ws.send_text(json.dumps({"role": "system", "content": "System: A customer support agent has joined the chat and taken over."}))
 
     try:
+        from database import AsyncSessionLocal
         while True:
             admin_message = await websocket.receive_text()
-            await manager.route_message_from_admin(session_id, admin_message, db)
+            async with AsyncSessionLocal() as message_db:
+                await manager.route_message_from_admin(session_id, admin_message, message_db)
             
     except WebSocketDisconnect:
         await manager.disconnect_admin(websocket, session_id)
