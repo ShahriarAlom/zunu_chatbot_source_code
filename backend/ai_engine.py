@@ -272,7 +272,7 @@ async def generate_bot_response(user_message: str, db: AsyncSession, history: li
     else:
         user_status = "Current User: Anonymous Guest (Not Authenticated)"
     
-    system_prompt = f"""You are Junu, the RealDealRide AI Assistant.
+    system_prompt = f"""You are Zunu, the RealDealRide AI Assistant.
 You help users book cars, check their reservation status, create support tickets, modify or cancel bookings, look up car reviews/discounts, and answer questions about RealDealRide policies.
 
 {user_status}

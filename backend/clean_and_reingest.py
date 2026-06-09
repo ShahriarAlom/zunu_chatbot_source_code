@@ -56,12 +56,14 @@ async def heal_database_schema(db: AsyncSession):
 async def clean_and_reingest():
     docs_dir = "/app/knowledge_Base_doc"
     docx_files = glob.glob(os.path.join(docs_dir, "*.docx"))
+    txt_files = glob.glob(os.path.join(docs_dir, "*.txt"))
+    all_files = docx_files + txt_files
     
-    if not docx_files:
-        print(f"No docx files found in {docs_dir}")
+    if not all_files:
+        print(f"No docx or txt files found in {docs_dir}")
         return
 
-    print(f"Found {len(docx_files)} documents in local folder.")
+    print(f"Found {len(all_files)} documents in local folder ({len(docx_files)} docx, {len(txt_files)} txt).")
     
     async with async_session() as db:
         # Auto-heal schema if mismatch exists before running ingestion
@@ -109,13 +111,36 @@ async def clean_and_reingest():
 
         # Step 2: Ingest missing or incomplete documents
         print("\nChecking for missing or incomplete documents...")
-        for idx, file_path in enumerate(docx_files, start=1):
+        for idx, file_path in enumerate(all_files, start=1):
             filename = os.path.basename(file_path)
-            title = filename.replace("Knowledge Base Document ", "").replace(".docx", "")
+            title = filename.replace("Knowledge Base Document ", "")
+            if filename.endswith(".docx"):
+                title = title.replace(".docx", "")
+            elif filename.endswith(".txt"):
+                title = title.replace(".txt", "")
             
-            # Check if this document exists in DB and is active
+            # Read content from disk first
+            try:
+                if file_path.endswith(".txt"):
+                    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                        source_text = f.read().strip()
+                else:
+                    doc = Document(file_path)
+                    full_text = []
+                    for para in doc.paragraphs:
+                        full_text.append(para.text)
+                    source_text = "\n".join(full_text).strip()
+            except Exception as e:
+                print(f"[{idx}/{len(all_files)}] Error reading '{filename}' from disk: {e}")
+                continue
+
+            if not source_text:
+                print(f"[{idx}/{len(all_files)}] Skipping '{title}': Empty file on disk.")
+                continue
+
+            # Check if this document exists in DB
             res = await db.execute(
-                text("SELECT document_id, status FROM kb_documents WHERE file_name = :filename"),
+                text("SELECT document_id, status, source_text FROM kb_documents WHERE file_name = :filename"),
                 {"filename": filename}
             )
             doc_row = res.first()
@@ -126,6 +151,7 @@ async def clean_and_reingest():
             if doc_row:
                 doc_id = doc_row[0]
                 status = doc_row[1]
+                stored_text = doc_row[2] or ""
                 
                 # Check chunk count for this document
                 res_chunks = await db.execute(
@@ -134,45 +160,43 @@ async def clean_and_reingest():
                 )
                 chunk_count = res_chunks.scalar()
                 
-                if status == "active" and chunk_count > 0:
-                    print(f"[{idx}/{len(docx_files)}] Skipping '{title}': Already active with {chunk_count} chunks.")
+                # Check if it is already active and contents match
+                if status == "active" and chunk_count > 0 and stored_text.strip() == source_text:
+                    print(f"[{idx}/{len(all_files)}] Skipping '{title}': Already active and matches disk content.")
                     continue
                 else:
-                    print(f"[{idx}/{len(docx_files)}] Re-processing '{title}': Status='{status}', Chunks={chunk_count}")
+                    reason = "Content changed" if stored_text.strip() != source_text else f"Status='{status}' or Chunks={chunk_count}"
+                    print(f"[{idx}/{len(all_files)}] Re-processing '{title}': {reason}")
+                    
+                    # Purge existing chunks to avoid duplication/orphans
+                    await db.execute(
+                        text("DELETE FROM kb_chunk_embeddings WHERE document_id = :doc_id"),
+                        {"doc_id": doc_id}
+                    )
+                    # Update status and source_text
+                    await db.execute(
+                        text("UPDATE kb_documents SET status = 'processing', source_text = :source_text WHERE document_id = :doc_id"),
+                        {"doc_id": doc_id, "source_text": source_text}
+                    )
+                    await db.commit()
                     should_process = True
             else:
                 # Insert new document
-                print(f"[{idx}/{len(docx_files)}] New document found: '{title}'. Inserting...")
+                print(f"[{idx}/{len(all_files)}] New document found: '{title}'. Inserting...")
                 insert_res = await db.execute(
                     text("""
-                        INSERT INTO kb_documents (category_id, title, file_name, cloudflare_r2_key, status)
-                        VALUES (5, :title, :filename, 'local_import', 'processing')
+                        INSERT INTO kb_documents (category_id, title, file_name, cloudflare_r2_key, status, source_text)
+                        VALUES (5, :title, :filename, 'local_import', 'processing', :source_text)
                     """),
-                    {"title": title[:255], "filename": filename[:255]}
+                    {"title": title[:255], "filename": filename[:255], "source_text": source_text}
                 )
                 doc_id = insert_res.lastrowid
                 await db.commit()
                 should_process = True
                 
             if should_process:
-                # Read DOCX content
                 try:
-                    doc = Document(file_path)
-                    full_text = []
-                    for para in doc.paragraphs:
-                        full_text.append(para.text)
-                    source_text = "\n".join(full_text).strip()
-                    
-                    if not source_text:
-                        print(f"  -> Skipping '{title}': Empty document.")
-                        await db.execute(
-                            text("UPDATE kb_documents SET status = 'error' WHERE document_id = :doc_id"),
-                            {"doc_id": doc_id}
-                        )
-                        await db.commit()
-                        continue
-                        
-                    # Call process_document_background
+                    # Call process_document_background with the loaded source_text
                     await process_document_background(doc_id, source_text, db)
                     
                     # Update status to active
@@ -188,8 +212,8 @@ async def clean_and_reingest():
                 except Exception as e:
                     print(f"  -> Failed to process '{title}': {e}")
                     await db.execute(
-                        text("UPDATE kb_documents SET status = 'error' WHERE document_id = :doc_id"),
-                        {"doc_id": doc_id}
+                        text("UPDATE kb_documents SET status = 'error', error_message = :err WHERE document_id = :doc_id"),
+                        {"doc_id": doc_id, "err": str(e)[:500]}
                     )
                     await db.commit()
 

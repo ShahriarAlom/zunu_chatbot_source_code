@@ -431,7 +431,7 @@
             <div id="rdr-chat-header">
                 <img src="https://realdealride.com/public/frontend/images/logo-light.png" onerror="this.style.display='none'" alt="RDR Logo" style="height: 24px; object-fit: contain;">
                 <div id="rdr-chat-header-info">
-                    <h4 id="rdr-chat-header-title">Junu</h4>
+                    <h4 id="rdr-chat-header-title">Zunu</h4>
                     <div id="rdr-chat-header-status"><span class="rdr-dot"></span> Replies instantly</div>
                 </div>
                 <div style="display: flex; gap: 12px; align-items: center;">
@@ -454,7 +454,7 @@
             </div>
 
             <div id="rdr-chat-messages">
-                <div class="rdr-msg rdr-msg-bot">Hi there! 👋 I'm Junu, your RealDealRide AI Assistant. How can I help you with your booking today?</div>
+                <div class="rdr-msg rdr-msg-bot">Hi there! 👋 I'm Zunu, your RealDealRide AI Assistant. How can I help you with your booking today?</div>
             </div>
             <div id="rdr-chat-input-area">
                 <input type="text" id="rdr-chat-input" placeholder="Type your message..." autocomplete="off">
@@ -525,7 +525,7 @@
         }
         
         // Clear screen and show default message
-        messages.innerHTML = '<div class="rdr-msg rdr-msg-bot">Hi there! 👋 I\'m Junu, your RealDealRide AI Assistant. How can I help you with your booking today?</div>';
+        messages.innerHTML = '<div class="rdr-msg rdr-msg-bot">Hi there! 👋 I\'m Zunu, your RealDealRide AI Assistant. How can I help you with your booking today?</div>';
         historyPanel.classList.remove('open');
         windowEl.classList.remove('expanded');
         
@@ -650,7 +650,7 @@
             
             messages.innerHTML = '';
             if (historyMessages.length === 0) {
-                addMessage("Welcome back! 👋 I'm Junu. Let's continue our conversation.", 'bot');
+                addMessage("Welcome back! 👋 I'm Zunu. Let's continue our conversation.", 'bot');
             } else {
                 historyMessages.forEach(msg => {
                     addMessage(msg.content, msg.role);
@@ -659,7 +659,7 @@
         } catch (e) {
             console.error("Error loading chat history messages", e);
             messages.innerHTML = '';
-            addMessage("Welcome back! 👋 I'm Junu. I was unable to load some past messages, but feel free to continue talking.", 'bot');
+            addMessage("Welcome back! 👋 I'm Zunu. I was unable to load some past messages, but feel free to continue talking.", 'bot');
         }
         
         reconnectWebSocket();

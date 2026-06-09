@@ -1,6 +1,6 @@
-# Junu AI Chatbot: Deliverables Package
+# Zunu AI Chatbot: Deliverables Package
 
-Welcome to the Junu AI Chatbot deliverables package. This folder contains all the files, code, sitemaps, and documentation required to deploy and run the chatbot on your hosting environment.
+Welcome to the Zunu AI Chatbot deliverables package. This folder contains all the files, code, sitemaps, and documentation required to deploy and run the chatbot on your hosting environment.
 
 ---
 
@@ -8,7 +8,7 @@ Welcome to the Junu AI Chatbot deliverables package. This folder contains all th
 
 The chatbot is designed with a **100% decoupled, plug-and-play architecture** that allows you to embed it on any website layout and integrate it with any administrative panel backend without sharing database connections or session tables.
 
-![Junu Chatbot System Architecture Map](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/chatbot_architecture_sitemap.png)
+![Zunu Chatbot System Architecture Map](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/chatbot_architecture_sitemap.png)
 
 ### Core Interfaces
 1. **WebSocket Interface (`/ws/chat`)**: Routes all real-time client-to-bot chat interactions, loads historical chat logs on reconnect, and manages live customer support takeover messaging.
@@ -66,7 +66,8 @@ This package is organized as follows:
     *   `POST /knowledge`: Saves/edits a document and starts background chunking/embeddings.
     *   `DELETE /knowledge/{id}`: Deletes a document and cascade-purges vector chunks.
 *   **Plain Text Only (`TXT`):** The API accepts plain text strings (`source_text`) for document updates, splits them, generates vector embeddings using the Gemini API, and stores them in MariaDB.
-*   *Note: Local `.docx` files are automatically ingested and embedded in the background on container startup, or can be manually re-run via the `clean_and_reingest.py` CLI script.*
+*   *Note: Local `.docx` and `.txt` files located inside `requirements/knowledge_Base_doc/` are automatically ingested and embedded in the background on container startup (or can be manually re-run via the `clean_and_reingest.py` CLI script). If you update a file on disk, the ingestion system compares the content with the database and automatically re-embeds the changes.*
+*   **KB Export Utility (`export_kb_to_txt.py`):** A command-line utility to query the `/knowledge/export` REST API and save all policies locally as `.txt` files. These `.txt` files can be placed inside `requirements/knowledge_Base_doc/` to automatically repopulate the database on new container builds.
 
 ### C. Live Support Dashboard (`support_admin_dashboard_mock_demo.html`)
 *   Lists active support sessions in a live queue.

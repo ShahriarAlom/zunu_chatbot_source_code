@@ -365,7 +365,7 @@
     <header>
         <div class="header-title-area">
             <h1>RealDealRide Support Panel</h1>
-            <span class="tag">Junu Live Takeover</span>
+            <span class="tag">Zunu Live Takeover</span>
         </div>
         <div class="status-badge">
             <span class="status-dot"></span>
@@ -396,7 +396,7 @@
                 </div>
 
                 <div style="font-size: 12px; font-weight: 600; color: var(--rdr-text-muted); text-transform: uppercase; margin: 10px 0 2px 4px; letter-spacing: 0.5px;">
-                    Junu Support Tickets
+                    Zunu Support Tickets
                 </div>
 
                 <!-- Ticket Card 1 -->
@@ -447,7 +447,7 @@
                     <div class="terminal-chat-area" id="live-chat-messages">
                         <div class="terminal-placeholder" id="live-chat-placeholder">
                             <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-                            <p>Enter a valid Session ID and click "Take Over Chat" to intercept Junu's WebSocket chat real-time.</p>
+                            <p>Enter a valid Session ID and click "Take Over Chat" to intercept Zunu's WebSocket chat real-time.</p>
                         </div>
                     </div>
 
@@ -528,7 +528,7 @@
                 document.getElementById('ticket-id-tag').innerText = "TKT-194823";
                 document.getElementById('ticket-meta-email').innerText = "rakeybulhasan@gmail.com";
                 document.getElementById('ticket-meta-category').innerText = "Reservation Modification";
-                document.getElementById('ticket-description-text').innerText = "User wants to extend their reservation for the 2016 Honda Pilot by 3 additional days starting next Tuesday. They requested admin approval as Junu cannot finalize dates directly without a credit card charge verification.";
+                document.getElementById('ticket-description-text').innerText = "User wants to extend their reservation for the 2016 Honda Pilot by 3 additional days starting next Tuesday. They requested admin approval as Zunu cannot finalize dates directly without a credit card charge verification.";
             } else if (type === 'ticket-2') {
                 document.getElementById('ticket-2').classList.add('active');
                 takeoverPanel.style.display = 'none';
@@ -574,7 +574,7 @@
 
                 const msgDiv = document.createElement('div');
                 msgDiv.className = 'msg msg-system';
-                msgDiv.innerText = `WebSocket handshake successful. Live chat session taken over from Junu.`;
+                msgDiv.innerText = `WebSocket handshake successful. Live chat session taken over from Zunu.`;
                 messagesArea.appendChild(msgDiv);
             };
 
@@ -603,7 +603,7 @@
 
                 const msgDiv = document.createElement('div');
                 msgDiv.className = 'msg msg-system';
-                msgDiv.innerText = `Takeover WebSocket connection closed. Routing control reverted back to Junu AI.`;
+                msgDiv.innerText = `Takeover WebSocket connection closed. Routing control reverted back to Zunu AI.`;
                 messagesArea.appendChild(msgDiv);
             };
         }

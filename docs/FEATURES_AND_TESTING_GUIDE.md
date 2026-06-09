@@ -1,4 +1,4 @@
-# Junu AI Chatbot: Features & Testing Guide
+# Zunu AI Chatbot: Features & Testing Guide
 
 This document is divided into two parts: **Part 1: Features & System Design** (how the chatbot works and interacts with the databases) and **Part 2: QA Testing Guide** (how to test the features).
 
@@ -6,7 +6,7 @@ This document is divided into two parts: **Part 1: Features & System Design** (h
 
 # Part 1: Features & System Design
 
-The Junu AI Chatbot is built using **FastAPI** (Python backend), **LangGraph** (agent logic), and a lightweight **ReactJS widget** (embedded in the Laravel frontend). 
+The Zunu AI Chatbot is built using **FastAPI** (Python backend), **LangGraph** (agent logic), and a lightweight **ReactJS widget** (embedded in the Laravel frontend). 
 
 ## 1. Core Chatbot Features
 
@@ -172,7 +172,7 @@ Follow these step-by-step instructions to test all features.
     * **Expected Behavior**: The connection succeeds. However, because no valid token is provided, the backend downgrades the connection to a guest session (`member_id = 0`). The user can chat and search general policies, but is restricted from checking booking status or initiating cancellations.
 * **Test 7.2: Verify Guest Access Without Tokens**
     * **Action**: Open `test_widget.html` with no query parameters (guest visitor).
-    * **Expected Behavior**: The connection succeeds immediately. The bot greets you: *"Hi there! 👋 I'm Junu..."* Guests can chat and ask general questions without a token.
+    * **Expected Behavior**: The connection succeeds immediately. The bot greets you: *"Hi there! 👋 I'm Zunu..."* Guests can chat and ask general questions without a token.
 * **Test 7.3: Authenticated User Login (Bypass Token)**
     * **Action**: Open `test_widget.html` with query parameters `?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345` (simulating a successful Laravel site login).
     * **Expected Behavior**: The connection succeeds immediately. The bot loads past conversations for member `22` and welcomes you. You have full access to reservation status and booking modifications.
@@ -276,4 +276,50 @@ Ensure that the stdout logs display successful responses for all CRUD steps:
 * **GET /knowledge (Status check)**: Successfully polls the status and waits until it becomes `active`.
 * **DELETE /knowledge/{id} (Delete)**: Removes the document from the database, returning `status: "success"`.
 * **GET /knowledge (Verification check)**: Verifies the document has been completely deleted.
+
+---
+
+### Test 10: Knowledge Base Plain Text Export & Container Repopulation
+
+To verify that the backup export script works and new/updated `.txt` files are automatically ingested and embedded in the database:
+
+#### Step 1: Run the Export Script
+1. Navigate to the deliverables directory and run:
+   ```bash
+   python export_kb_to_txt.py
+   ```
+2. Enter the backend URL (e.g. `http://localhost:8085` or your production URL).
+3. Verify that the script successfully downloads all policy documents and creates `.txt` files inside the `exported_kb_txt/` directory.
+4. Open one of the exported `.txt` files (e.g. `cancellation_policy.txt`) to verify the plain text format is correct.
+
+#### Step 2: Test Automatic Ingestion & Diff-Based Updates
+1. Copy one of the exported `.txt` files or create a new test file named `Knowledge Base Document Test Policy.txt` containing:
+   ```text
+   This is a temporary test policy for Zunu AI Chatbot. 
+   RealDealRide offers a 100% discount on all bookings made during testing.
+   ```
+2. Place this file inside the `requirements/knowledge_Base_doc/` directory of the chatbot.
+3. Force a manual ingestion run (or rebuild/restart the container):
+   ```bash
+   docker exec -it rdr_fastapi_backend python clean_and_reingest.py
+   ```
+4. Verify from the container stdout logs that it prints:
+   `New document found: 'Test Policy'. Inserting...` and `Successfully embedded 'Test Policy'`.
+5. Run a semantic search in the chatbot widget sandbox (`test_widget.html`):
+   * Type: `What is the discount during testing?`
+   * *Expected Behavior:* The bot should answer about the 100% discount, citing the "Test Policy" document.
+6. Now, modify the content of `Knowledge Base Document Test Policy.txt` on disk:
+   ```text
+   This is a temporary test policy for Zunu AI Chatbot. 
+   RealDealRide offers a 50% discount on all bookings made during testing.
+   ```
+7. Re-run the ingestion command:
+   ```bash
+   docker exec -it rdr_fastapi_backend python clean_and_reingest.py
+   ```
+8. Verify from the log output that the script detects the change:
+   `Re-processing 'Test Policy': Content changed` and `Successfully embedded 'Test Policy'`.
+9. Ask the bot again: `What is the discount during testing?`
+   * *Expected Behavior:* The bot should now correctly answer that the discount is 50%.
+10. Delete the file `Knowledge Base Document Test Policy.txt` from the disk folder.
 

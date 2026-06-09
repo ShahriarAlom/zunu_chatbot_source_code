@@ -497,9 +497,9 @@ async def websocket_chat_endpoint(websocket: WebSocket, db: AsyncSession = Depen
     
     # Send welcome message only if it's a completely new session (no history loaded)
     if not has_history:
-        await websocket.send_text("Hi there! 👋 I'm Junu, your RealDealRide AI Assistant. How can I help you with your booking today?")
+        await websocket.send_text("Hi there! 👋 I'm Zunu, your RealDealRide AI Assistant. How can I help you with your booking today?")
     else:
-        await websocket.send_text("Welcome back! 👋 I'm Junu. I've loaded your previous conversation. How can I help you today?")
+        await websocket.send_text("Welcome back! 👋 I'm Zunu. I've loaded your previous conversation. How can I help you today?")
     
     try:
         from database import AsyncSessionLocal

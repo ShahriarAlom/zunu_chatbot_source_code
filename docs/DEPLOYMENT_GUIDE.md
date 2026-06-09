@@ -1,6 +1,6 @@
-# Junu AI Chatbot: Production Deployment Guide
+# Zunu AI Chatbot: Production Deployment Guide
 
-This guide describes how to deploy the Junu AI Chatbot (Junu) system in your hosting environment. It provides step-by-step instructions, configuration snippets, and technical references for developers.
+This guide describes how to deploy the Zunu AI Chatbot (Zunu) system in your hosting environment. It provides step-by-step instructions, configuration snippets, and technical references for developers.
 
 ---
 
@@ -8,7 +8,7 @@ This guide describes how to deploy the Junu AI Chatbot (Junu) system in your hos
 
 The chatbot is designed with a **100% decoupled, plug-and-play architecture** that allows you to embed it on any website layout and integrate it with any administrative panel backend without sharing database connections or session tables.
 
-![Junu Chatbot System Architecture Map](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/chatbot_architecture_sitemap.png)
+![Zunu Chatbot System Architecture Map](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/chatbot_architecture_sitemap.png)
 
 ### Core Interfaces
 1. **WebSocket Interface (`/ws/chat`)**: Routes all real-time client-to-bot chat interactions, loads historical chat logs on reconnect, and manages live customer support takeover messaging.
@@ -184,7 +184,7 @@ LARAVEL_DB_URI=mysql+aiomysql://rdadmin_dev:b%21vq%3BN%7DNjFJ1@localhost:3306/rd
    * **Location:** `realdealride.com/public/frontend/js/rdr_chatbot.js`
 2. Integrate the widget into your layout template file (e.g., your Laravel Blade master layout `resources/views/layouts/master.blade.php`) by adding this script block inside the `<head>` tag. Ensure you include the `@if(Auth::check())` condition to dynamically generate and pass user details when logged in:
    ```html
-   <!-- RealDealRide Junu Chatbot Integration -->
+   <!-- RealDealRide Zunu Chatbot Integration -->
    @if(Auth::check())
        <script 
          src="https://yourdomain.com/frontend/js/rdr_chatbot.js"
@@ -600,32 +600,66 @@ Use `scp`, `sftp`, or any file transfer tool to upload `chatbot_backup.sql` from
 
 ---
 
-### Option B: API-Based Bulk Export & Import (Decoupled & Independent)
+### Option B: Plain Text Export and Docker Container Rebuild Workflow (Highly Portable)
 
-This option uses the chatbot's HTTP REST endpoints to export all documents as a JSON payload and re-import them. This is highly portable because it does not require SSH database shell access; your website's admin panel can perform the backup and restore directly using HTTP calls.
+This option uses the chatbot's `/knowledge/export` REST API endpoint via a Python utility script to export all documents as plain `.txt` files. These `.txt` files are then placed inside the `requirements/knowledge_Base_doc/` folder. When you rebuild or restart the chatbot containers, the FastAPI service automatically reads, diffs, and repopulates the MariaDB database with the text files.
 
-#### Generic API Specification
+This is the recommended workflow for migrations, server changes, or when rebuilding Docker images, as it does not require database admin tools or SQL exports.
 
-##### 1. Export the Knowledge Base
+#### Step-by-Step Procedure
+
+##### Step 1: Export the Knowledge Base to TXT Files
+1. Run the python utility script included in the deliverables root directory:
+   ```bash
+   python export_kb_to_txt.py
+   ```
+2. When prompted, enter the chatbot backend URL (e.g. `http://localhost:8085` or `https://yourdomain.com/chat-api`).
+3. The script calls the `/knowledge/export` endpoint, extracts the plain text of each policy, and saves it as a `.txt` file inside a newly created `exported_kb_txt/` directory.
+
+##### Step 2: Copy the TXT Files to the Requirements Folder
+1. Locate the exported `.txt` files in the `exported_kb_txt/` directory.
+2. Copy these files into the `requirements/knowledge_Base_doc/` directory of your chatbot project repository on the new server or local workspace.
+   * *Note: You can safely delete the old `.docx` files from this folder and replace them with your custom `.txt` files. Only the files in this folder will be used to populate the database on container start.*
+
+##### Step 3: Rebuild and Restart the Docker Containers
+1. Rebuild and start the containers using Docker Compose. This mounts the updated `requirements/knowledge_Base_doc/` volume into the backend container:
+   ```bash
+   docker-compose up -d --build
+   ```
+2. Monitor the FastAPI backend logs to verify that the files are being ingested and embedded:
+   ```bash
+   docker logs -f rdr_fastapi_backend
+   ```
+3. The container's startup routine runs the ingestion utility, scans the directory, checks if the documents exist in the database, compares contents, and automatically generates new vector chunks using the Google Gemini API.
+
+---
+
+#### Technical Details & API Reference
+
+If you want to integrate this flow into your own admin panel or write custom automation, the backend provides the following decoupled HTTP REST endpoints:
+
+##### 1. GET /knowledge/export
+* **Description**: Retrieves all stored documents with their titles and full content.
 * **Method**: `GET`
 * **URL**: `/knowledge/export`
-* **Response**: A JSON array containing all documents, versions, and source texts:
+* **Response**: A JSON array of document objects:
   ```json
   [
     {
       "title": "Cancellation Policy",
       "source_text": "All reservations must be cancelled at least 24 hours prior...",
-      "file_name": "cancellation_policy.txt",
+      "file_name": "Knowledge Base Document RealDealRide Cancellation & Refund Policy.txt",
       "version": "1.0"
     }
   ]
   ```
 
-##### 2. Import the Knowledge Base
+##### 2. POST /knowledge/import
+* **Description**: Batch imports documents. Any files included in the request body will be inserted, and background vector chunk indexing will be initiated.
 * **Method**: `POST`
 * **URL**: `/knowledge/import`
 * **Request Headers**: `Content-Type: application/json`
-* **Request Body**: The JSON array payload exported in the previous step.
+* **Request Body**: A JSON array of document objects (same format as the export output).
 * **Response**:
   ```json
   {
@@ -635,79 +669,11 @@ This option uses the chatbot's HTTP REST endpoints to export all documents as a 
   }
   ```
 
----
-
-#### To-Do (Backend Implementations)
-
-##### PHP (Laravel) Controller Methods
-Add these methods to your admin panel controller to support backup downloads and restores:
-```php
-use Illuminate\Support\Facades\Http;
-
-// 1. Download Backup File
-public function exportBackup()
-{
-    $response = Http::get('https://yourdomain.com/chat-api/knowledge/export');
-    if ($response->successful()) {
-        $jsonContent = json_encode($response->json(), JSON_PRETTY_PRINT);
-        return response($jsonContent)
-            ->header('Content-Type', 'application/json')
-            ->header('Content-Disposition', 'attachment; filename="chatbot_kb_backup.json"');
-    }
-    return redirect()->back()->with('error', 'Failed to export backup.');
-}
-
-// 2. Upload and Restore Backup File
-public function importBackup(Request $request)
-{
-    $file = $request->file('backup_file');
-    $payload = json_decode(file_get_contents($file->getRealPath()), true);
-
-    $response = Http::post('https://yourdomain.com/chat-api/knowledge/import', $payload);
-
-    if ($response->successful()) {
-        return redirect()->back()->with('success', 'Backup uploaded. Background vector indexing has started.');
-    }
-    return redirect()->back()->with('error', 'Failed to restore backup.');
-}
-```
-
-##### Node.js (Express/Axios) Router Methods
-Add these handlers to your Express admin router:
-```javascript
-const axios = require('axios');
-
-// 1. Download Backup File
-router.get('/admin/chatbot/export', async (req, res) => {
-    try {
-        const response = await axios.get('https://yourdomain.com/chat-api/knowledge/export');
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', 'attachment; filename=chatbot_kb_backup.json');
-        res.send(JSON.stringify(response.data, null, 2));
-    } catch (error) {
-        console.error('Failed to export:', error.message);
-        res.redirect('back');
-    }
-});
-
-// 2. Upload and Restore Backup File
-router.post('/admin/chatbot/import', async (req, res) => {
-    if (!req.files || !req.files.backup_file) {
-        return res.status(400).send('No backup file uploaded.');
-    }
-    const payload = JSON.parse(req.files.backup_file.data.toString());
-    try {
-        await axios.post('https://yourdomain.com/chat-api/knowledge/import', payload);
-        req.flash('success', 'Backup restored. Background embedding has started.');
-        res.redirect('/admin/chatbot');
-    } catch (error) {
-        console.error('Failed to import:', error.message);
-        res.redirect('back');
-    }
-});
-```
-
-#### Explanation
-* **Stateless Portability**: Importing documents via the `/knowledge/import` API automatically invokes the background chunking worker inside the chatbot container. This ensures that the new MariaDB database is populated with the correct tables and the vector embeddings are automatically rebuilt using the Gemini API.
+##### 3. Automatic Content Diffing
+The backend ingestion worker (`clean_and_reingest.py`) reads disk files first and compares them against the database's `source_text`. If a file's content differs (or if the database record is missing/inactive), the script:
+1. Clears existing vector chunks for that document (`DELETE FROM kb_chunk_embeddings WHERE document_id = :doc_id`).
+2. Updates `kb_documents.source_text` and resets status to `'processing'`.
+3. Re-runs the Gemini API embedding generation to rebuild the vector index.
+This guarantees that you can update text files directly in `requirements/knowledge_Base_doc/` and have them automatically synchronized without manual database manipulation.
 
 
