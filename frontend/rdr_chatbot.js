@@ -675,7 +675,9 @@
 
     function connectWebSocket() {
         const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        let wsUrl = wsProto + '//' + window.location.host + '/ws/chat?session_id=' + currentSessionId;
+        let host = window.location.host || 'localhost:8085';
+        let wsProtoLocal = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        let wsUrl = wsProtoLocal + '//' + host + '/ws/chat?session_id=' + currentSessionId;
         if (jwtToken) {
             wsUrl += '&token=' + jwtToken;
         }

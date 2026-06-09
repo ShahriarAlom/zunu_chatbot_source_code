@@ -4,12 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize the Gemini Flash Lite Model
-llm = ChatGoogleGenerativeAI(
-    model="gemini-3.1-flash-lite",
-    temperature=0.2,
-    google_api_key=os.getenv("GEMINI_API_KEY"),
-)
+from config_service import get_ai_config
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from retrieval import retrieve_context
@@ -36,6 +31,16 @@ async def generate_bot_response(user_message: str, db: AsyncSession, history: li
     """
     if history is None:
         history = []
+
+    # Fetch dynamic AI configuration
+    ai_config = await get_ai_config()
+
+    # Initialize the LLM dynamically
+    llm = ChatGoogleGenerativeAI(
+        model=ai_config.get("llm_model", "gemini-3.1-flash-lite"),
+        temperature=float(ai_config.get("temperature", 0.2)),
+        google_api_key=os.getenv("GEMINI_API_KEY"),
+    )
 
     # 1. Query database ChatSession to get the persisted member_id for this session
     db_member_id = 0
@@ -272,30 +277,9 @@ async def generate_bot_response(user_message: str, db: AsyncSession, history: li
     else:
         user_status = "Current User: Anonymous Guest (Not Authenticated)"
     
-    system_prompt = f"""You are Zunu, the RealDealRide AI Assistant.
-You help users book cars, check their reservation status, create support tickets, modify or cancel bookings, look up car reviews/discounts, and answer questions about RealDealRide policies.
-
-{user_status}
-
-Security & Authentication Policy:
-- Logged-in members (Securely Authenticated) have full access to view, modify, cancel reservations, and submit support tickets.
-- Anonymous Guests must be authenticated via email before performing account-specific actions. Prompt: "I'd be happy to help with that! Could you please tell me the email address associated with your account?"
-- Guests who have verified their email (Dynamically Verified Email) are only allowed to submit support tickets. They are strictly blocked from checking reservation details, modifying reservations, or cancelling reservations due to lack of a secure session token. If they attempt these, the system tool will return a security blocking message. You should explain that they need to log in to the website securely first to perform reservation modifications/viewing.
-
-Core Capabilities:
-- Search and book cars: You can search our live car inventory by city, type (SUV, Sedan, Van, etc.), and price.
-- Check reservation status: You can look up active and past bookings for securely logged-in users.
-- Support tickets: You can open official support tickets directly in our system if a user has an issue.
-- Modify/Cancel Reservations: You can file pending reservation modification requests or cancellation requests for securely logged-in users.
-- Car Reviews & Discounts: You can fetch customer feedback, ratings, and active promotional discounts for specific vehicles.
-- Policy knowledge: You can answer questions about rental rules, age limits, deposits, cancellation policies, etc.
-
-Behavior Guidelines:
-- Be friendly, helpful, clear, and concise.
-- Never invent policies, procedures, reviews, or discounts.
-- When you use the search_car_inventory_tool, check_reservation_status_tool, create_support_ticket_tool, request_reservation_modification_tool, or request_booking_cancellation_tool, the tool will return HTML code for the UI. You MUST return this HTML code EXACTLY as provided without altering it or wrapping it in Markdown blocks. Do not add ```html blocks around the output.
-- If the user asks a conversational question that doesn't require a tool, just answer it directly.
-"""
+    # Inject user status into the dynamic system prompt
+    raw_system_prompt = ai_config.get("system_prompt", "")
+    system_prompt = raw_system_prompt.replace("{user_status}", user_status)
 
     agent = create_agent(
         model=llm,
@@ -333,4 +317,4 @@ Behavior Guidelines:
         return str(content)
     except Exception as e:
         print(f"Agent Error: {e}")
-        return "I am experiencing technical difficulties. Please wait while I connect you to a human agent."
+        return ai_config.get("fallback_message", "I am experiencing technical difficulties. Please wait while I connect you to a human agent.")

@@ -69,12 +69,33 @@ This package is organized as follows:
 *   *Note: Local `.docx` and `.txt` files located inside `requirements/knowledge_Base_doc/` are automatically ingested and embedded in the background on container startup (or can be manually re-run via the `clean_and_reingest.py` CLI script). If you update a file on disk, the ingestion system compares the content with the database and automatically re-embeds the changes.*
 *   **KB Export Utility (`export_kb_to_txt.py`):** A command-line utility to query the `/knowledge/export` REST API and save all policies locally as `.txt` files. These `.txt` files can be placed inside `requirements/knowledge_Base_doc/` to automatically repopulate the database on new container builds.
 
-### C. Live Support Dashboard (`support_admin_dashboard_mock_demo.html`)
-*   Lists active support sessions in a live queue.
-*   Allows agents to view chat logs and click **"Accept Takeover"** to intercept a conversation, routing subsequent messages directly between the agent and customer.
+### C. Live Support Takeover (`/ws/admin` & `/api/support`)
+*   **Active Support Queue:** `GET /api/support/sessions` retrieves a live list of active guest or member chat sessions.
+*   **WebSocket Takeover Hook:** Admins can accept a chat takeover (`POST /api/support/sessions/{session_id}/takeover`) which shifts the session status in the socket manager.
+*   **WebSocket Bridge:** When an admin connects via WebSocket (`/ws/admin?session_id=...`), their messages are routed directly to the customer, and the AI chatbot engine is temporarily disabled.
+*   **Release Takeover:** Admins can release the session back to the AI chatbot at any time (`POST /api/support/sessions/{session_id}/release`).
 
-### D. Zero-DB Stateless Handshake
+### D. Support Tickets Queue REST API (`/api/tickets`)
+*   **Laravel Database Integration:** The chatbot integrates support tickets directly with the Laravel website database (`rdadmin_dev_realdealride` / MySQL).
+*   **Decoupled Ticket REST Endpoints:**
+    *   `GET /api/tickets`: Lists support tickets with filtering options (status, category, priority, and text search) joined with customer account information.
+    *   `POST /api/tickets`: Submits a new support ticket (used by guests or members).
+    *   `POST /api/tickets/{ticket_id}/reply`: Appends agent reply strings directly to the `support_chats` database table.
+    *   `PUT /api/tickets/{ticket_id}/status`: Updates ticket status metadata (Open, In-Progress, Completed/Resolved, Closed).
+    *   `PUT /api/tickets/{ticket_id}/priority`: Updates ticket priority levels (Low, Medium, High, Urgent).
+
+### E. AI Performance & Analytics Dashboard APIs (`/api/analytics`)
+*   **Overview Metrics:** `GET /api/analytics/overview` dynamically aggregates key metrics from the MariaDB `query_log` and `chat_sessions` tables (Total Queries, Answered Rate, Average AI Confidence, Average Response Time, Active Document/Chunk Counts, and Average Customer Satisfaction).
+*   **Query Volume Chart:** `GET /api/analytics/chart` aggregates and group-counts chatbot query volumes for the last 14 days, used to render query graphs.
+*   **Top Unanswered Queries:** `GET /api/analytics/unanswered` queries the `v_top_unanswered` MariaDB view to retrieve queries with low confidence or fallback triggers.
+
+### F. Sandbox Test Environment & AI Configuration (`/api/sandbox` & `/config/ai`)
+*   **Test Sandbox Engine:** `POST /api/sandbox` allows admins to input test questions and receive real-time similarity matching details, cosine distances, confidence scores, and raw Gemini generative responses.
+*   **AI Settings Manager:** `GET /config/ai` and `POST /config/ai` retrieve and persist system prompts, LLM model parameters, temperature settings, and similarity confidence thresholds directly to the MariaDB `ai_configuration` table.
+
+### G. Zero-DB Stateless Handshake
 *   **Zero Database Session Sharing:** The Laravel website and FastAPI chatbot require no shared database access, session tables, or Redis clusters for session handshake.
 *   **Stateless Cryptography:** The website signs user details in-memory using HS256 JWT, and the chatbot verifies the identity in-memory, ensuring absolute portability and backend decoupling.
 *   **Graceful Guest Fallback:** If a verification signature is invalid or expired, the connection falls back gracefully to a guest session instead of disconnecting the user.
+
 

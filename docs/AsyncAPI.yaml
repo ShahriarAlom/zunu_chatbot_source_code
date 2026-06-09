@@ -1,0 +1,90 @@
+asyncapi: 2.6.0
+info:
+  title: RealDealRide AI Chatbot WebSocket API
+  version: 1.0.0
+  description: |
+    WebSocket interfaces for the RealDealRide AI Chatbot.
+    Defines the connection streams for regular users (chatting with AI) and admin users (live support takeover).
+
+servers:
+  production:
+    url: wss://api.realdealride.com
+    protocol: wss
+    description: Production WebSocket server
+  development:
+    url: ws://localhost:8000
+    protocol: ws
+    description: Local development WebSocket server
+
+channels:
+  /ws/chat:
+    description: >
+      Channel for the end user to chat with the AI (Zunu) or a human agent.
+      Requires `session_id`. Optionally takes `token`, `member_id`, and `guest_session_id`.
+    subscribe:
+      summary: Receive messages from AI or Admin
+      message:
+        $ref: '#/components/messages/IncomingChatMessage'
+    publish:
+      summary: Send messages to the AI or Admin
+      message:
+        $ref: '#/components/messages/OutgoingUserMessage'
+
+  /ws/admin:
+    description: >
+      Channel for the Admin panel to takeover a user session.
+      Requires `session_id` matching the user's session.
+    subscribe:
+      summary: Receive incoming user messages
+      message:
+        $ref: '#/components/messages/IncomingUserMessageToAdmin'
+    publish:
+      summary: Send messages to the user
+      message:
+        $ref: '#/components/messages/OutgoingAdminMessage'
+
+components:
+  messages:
+    IncomingChatMessage:
+      name: IncomingChatMessage
+      title: Incoming Chat Message
+      summary: A message received by the user client.
+      payload:
+        type: object
+        properties:
+          role:
+            type: string
+            enum: [assistant, admin, system]
+            description: The sender of the message.
+          content:
+            type: string
+            description: The HTML/Text content of the message.
+
+    OutgoingUserMessage:
+      name: OutgoingUserMessage
+      title: Outgoing User Message
+      summary: A raw string message sent by the user to the server.
+      payload:
+        type: string
+        description: User's typed message.
+
+    IncomingUserMessageToAdmin:
+      name: IncomingUserMessageToAdmin
+      title: Incoming User Message To Admin
+      summary: Message sent from user, forwarded to the admin WebSocket.
+      payload:
+        type: object
+        properties:
+          role:
+            type: string
+            enum: [user]
+          content:
+            type: string
+
+    OutgoingAdminMessage:
+      name: OutgoingAdminMessage
+      title: Outgoing Admin Message
+      summary: A raw string message sent by the admin to the user.
+      payload:
+        type: string
+        description: Admin's typed response.

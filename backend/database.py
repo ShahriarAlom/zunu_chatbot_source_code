@@ -160,3 +160,12 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
+# --- AI CONFIGURATION ---
+
+class AiConfiguration(Base):
+    __tablename__ = "ai_configuration"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    config_data = Column(JSON, nullable=False)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+

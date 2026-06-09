@@ -1,0 +1,1795 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RealDealRide &mdash; AI Q&amp;A Admin Console (MariaDB 11.7+)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --rdr-navy: #0F1B2D;
+      --rdr-navy-light: #1A2940;
+      --rdr-navy-hover: #243553;
+      --rdr-blue: #2E75B6;
+      --rdr-blue-light: #3D8BD4;
+      --rdr-blue-glow: rgba(46,117,182,0.15);
+      --rdr-teal: #17A2B8;
+      --rdr-green: #28A745;
+      --rdr-orange: #F59E0B;
+      --rdr-red: #DC3545;
+      --rdr-maria: #003545;
+      --rdr-bg: #F0F4F8;
+      --rdr-card: #FFFFFF;
+      --rdr-text: #1E293B;
+      --rdr-muted: #64748B;
+      --rdr-border: #E2E8F0;
+      --sidebar-w: 260px;
+      --header-h: 64px;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--rdr-bg); color: var(--rdr-text); margin: 0; overflow-x: hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: var(--rdr-navy); color: #CBD5E1; z-index: 1040; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+    .sidebar-brand { height: var(--header-h); display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-brand .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--rdr-teal), var(--rdr-blue)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; font-weight: 700; margin-right: 12px; flex-shrink: 0; }
+    .sidebar-brand span { font-weight: 700; font-size: 16px; color: #fff; letter-spacing: -0.3px; }
+    .sidebar-brand small { display: block; font-size: 10px; color: var(--rdr-teal); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; }
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 16px 12px; }
+    .nav-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #475569; padding: 16px 12px 6px; font-weight: 600; }
+    .sidebar-nav .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; color: #94A3B8; font-size: 13.5px; font-weight: 500; transition: all 0.2s; margin-bottom: 2px; cursor: pointer; text-decoration: none; }
+    .sidebar-nav .nav-link:hover { background: var(--rdr-navy-hover); color: #E2E8F0; }
+    .sidebar-nav .nav-link.active { background: var(--rdr-teal); color: #fff; box-shadow: 0 2px 8px rgba(23,162,184,0.35); }
+    .sidebar-nav .nav-link i { font-size: 17px; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
+    .sidebar-footer .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--rdr-navy-hover); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--rdr-teal); }
+    .sidebar-footer .user-name { font-size: 13px; font-weight: 600; color: #E2E8F0; }
+    .sidebar-footer .user-role { font-size: 11px; color: #64748B; }
+
+    /* ── Main Content ── */
+    .main-wrapper { margin-left: var(--sidebar-w); min-height: 100vh; }
+    .top-header { height: var(--header-h); background: var(--rdr-card); border-bottom: 1px solid var(--rdr-border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; position: sticky; top: 0; z-index: 1020; }
+    .top-header .page-title { font-size: 18px; font-weight: 700; color: var(--rdr-text); letter-spacing: -0.3px; }
+    .content-area { padding: 28px; }
+
+    /* ── Cards ── */
+    .rdr-card { background: var(--rdr-card); border: 1px solid var(--rdr-border); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.2s; }
+    .rdr-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .rdr-card .card-header-custom { padding: 18px 22px; border-bottom: 1px solid var(--rdr-border); display: flex; align-items: center; justify-content: space-between; }
+    .rdr-card .card-header-custom h6 { font-size: 14px; font-weight: 700; margin: 0; color: var(--rdr-text); }
+    .rdr-card .card-body-custom { padding: 22px; }
+
+    /* ── Stat Cards ── */
+    .stat-card { padding: 22px; border-radius: 12px; background: var(--rdr-card); border: 1px solid var(--rdr-border); position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; border-radius: 12px 0 0 12px; }
+    .stat-card.blue::before { background: var(--rdr-blue); }
+    .stat-card.green::before { background: var(--rdr-green); }
+    .stat-card.orange::before { background: var(--rdr-orange); }
+    .stat-card.teal::before { background: var(--rdr-teal); }
+    .stat-card.red::before { background: var(--rdr-red); }
+    .stat-card .stat-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px; }
+    .stat-card.blue .stat-icon { background: rgba(46,117,182,0.1); color: var(--rdr-blue); }
+    .stat-card.green .stat-icon { background: rgba(40,167,69,0.1); color: var(--rdr-green); }
+    .stat-card.orange .stat-icon { background: rgba(245,158,11,0.1); color: var(--rdr-orange); }
+    .stat-card.teal .stat-icon { background: rgba(23,162,184,0.1); color: var(--rdr-teal); }
+    .stat-card.red .stat-icon { background: rgba(220,53,69,0.1); color: var(--rdr-red); }
+    .stat-card .stat-value { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
+    .stat-card .stat-label { font-size: 12px; color: var(--rdr-muted); font-weight: 500; }
+    .stat-card .stat-change { font-size: 11px; font-weight: 600; margin-top: 8px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 20px; }
+    .stat-change.up { background: rgba(40,167,69,0.1); color: var(--rdr-green); }
+    .stat-change.down { background: rgba(220,53,69,0.1); color: var(--rdr-red); }
+
+    /* ── Tables ── */
+    .rdr-table { font-size: 13px; margin: 0; }
+    .rdr-table thead th { background: #F8FAFC; border-bottom: 2px solid var(--rdr-border); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--rdr-muted); padding: 12px 16px; white-space: nowrap; }
+    .rdr-table tbody td { padding: 14px 16px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; }
+    .rdr-table tbody tr:hover { background: #F8FAFC; }
+
+    /* ── Badges ── */
+    .badge-status { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.2px; }
+    .badge-active { background: rgba(40,167,69,0.1); color: #1B7A33; }
+    .badge-processing { background: rgba(46,117,182,0.1); color: var(--rdr-blue); }
+    .badge-archived { background: rgba(100,116,139,0.1); color: var(--rdr-muted); }
+    .badge-high { background: rgba(220,53,69,0.1); color: var(--rdr-red); }
+    .badge-medium { background: rgba(245,158,11,0.1); color: #B45309; }
+    .badge-low { background: rgba(40,167,69,0.1); color: #1B7A33; }
+
+    /* ── Charts ── */
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding-top: 10px; }
+    .bar-chart .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+    .bar-chart .bar { width: 100%; max-width: 32px; border-radius: 4px 4px 0 0; background: var(--rdr-teal); transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); min-height: 4px; }
+    .bar-chart .bar-label { font-size: 10px; color: var(--rdr-muted); font-weight: 500; }
+
+    /* ── Donut ── */
+    .donut-wrapper { position: relative; width: 140px; height: 140px; margin: 0 auto; }
+    .donut-wrapper svg { transform: rotate(-90deg); }
+    .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+    .donut-center .donut-value { font-size: 26px; font-weight: 700; color: var(--rdr-text); }
+    .donut-center .donut-label { font-size: 10px; color: var(--rdr-muted); font-weight: 500; }
+
+    /* ── Sandbox ── */
+    .sandbox-output { background: #F8FAFC; border: 1px solid var(--rdr-border); border-radius: 8px; padding: 16px; font-size: 13px; min-height: 100px; }
+    .sandbox-output .chunk-card { background: #fff; border: 1px solid var(--rdr-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+    .sandbox-output .chunk-score { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; }
+    .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; margin-bottom: 10px; }
+    .chat-bubble.user { background: var(--rdr-teal); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
+    .chat-bubble.ai { background: #F1F5F9; color: var(--rdr-text); border-bottom-left-radius: 4px; }
+    .chat-bubble .source-tag { display: inline-block; margin-top: 8px; font-size: 11px; color: var(--rdr-teal); background: rgba(23,162,184,0.08); padding: 2px 8px; border-radius: 4px; cursor: pointer; }
+
+    /* ── SQL Preview ── */
+    .sql-preview { background: var(--rdr-navy); color: #A5F3FC; border-radius: 8px; padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.6; overflow-x: auto; margin-top: 12px; display: none; }
+    .sql-preview .sql-kw { color: #7DD3FC; }
+    .sql-preview .sql-fn { color: #86EFAC; }
+    .sql-preview .sql-str { color: #FCA5A5; }
+    .sql-preview .sql-cm { color: #64748B; }
+
+    /* ── Form ── */
+    .form-control:focus, .form-select:focus { border-color: var(--rdr-teal); box-shadow: 0 0 0 3px rgba(23,162,184,0.15); }
+    .btn-rdr { background: var(--rdr-teal); color: #fff; border: none; font-weight: 600; font-size: 13px; padding: 8px 18px; border-radius: 8px; transition: all 0.2s; }
+    .btn-rdr:hover { background: #138496; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(23,162,184,0.3); }
+    .btn-outline-rdr { background: transparent; color: var(--rdr-teal); border: 1px solid var(--rdr-teal); font-weight: 600; font-size: 13px; padding: 8px 18px; border-radius: 8px; transition: all 0.2s; }
+    .btn-outline-rdr:hover { background: var(--rdr-teal); color: #fff; }
+
+    /* ── Range display ── */
+    .range-display { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--rdr-teal); }
+
+    /* ── Prompt editor ── */
+    .prompt-editor { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.7; border-radius: 8px; border: 1px solid var(--rdr-border); padding: 16px; min-height: 180px; resize: vertical; }
+    .prompt-editor:focus { border-color: var(--rdr-teal); box-shadow: 0 0 0 3px rgba(23,162,184,0.15); }
+
+    /* ── Section Tabs ── */
+    .section-tabs { display: flex; gap: 4px; background: #F1F5F9; padding: 4px; border-radius: 10px; margin-bottom: 24px; }
+    .section-tabs .stab { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--rdr-muted); border: none; background: transparent; }
+    .section-tabs .stab.active { background: #fff; color: var(--rdr-text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .section-tabs .stab:hover:not(.active) { color: var(--rdr-text); }
+
+    /* ── Unanswered ── */
+    .unanswered-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F1F5F9; }
+    .unanswered-item:last-child { border-bottom: 0; }
+    .unanswered-rank { width: 28px; height: 28px; border-radius: 8px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--rdr-muted); flex-shrink: 0; }
+
+    /* ── Upload ── */
+    .upload-zone { border: 2px dashed var(--rdr-border); border-radius: 12px; padding: 40px 20px; text-align: center; transition: all 0.2s; cursor: pointer; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--rdr-teal); background: rgba(23,162,184,0.05); }
+    .upload-zone i { font-size: 36px; color: var(--rdr-teal); margin-bottom: 12px; }
+
+    /* ── HNSW Config Card (NEW for MariaDB) ── */
+    .hnsw-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(23,162,184,0.1); color: var(--rdr-teal); font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .hnsw-param-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #F1F5F9; }
+    .hnsw-param-row:last-child { border-bottom: none; }
+    .hnsw-param-label { font-size: 13px; font-weight: 600; color: var(--rdr-text); }
+    .hnsw-param-desc { font-size: 11px; color: var(--rdr-muted); margin-top: 2px; }
+    .hnsw-param-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--rdr-teal); min-width: 50px; text-align: right; }
+
+    /* ── DB Badge ── */
+    .db-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,53,69,0.08); color: var(--rdr-maria); font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
+
+    /* ── Page switching ── */
+    .page-content { display: none; }
+    .page-content.active { display: block; }
+    .sidebar-toggle { display: none; background: none; border: none; font-size: 22px; color: var(--rdr-text); cursor: pointer; }
+    @media (max-width: 991px) { .sidebar { transform: translateX(-100%); } .sidebar.show { transform: translateX(0); } .main-wrapper { margin-left: 0; } .sidebar-toggle { display: block; } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeUp 0.4s ease forwards; }
+    .animate-in:nth-child(1) { animation-delay: 0s; } .animate-in:nth-child(2) { animation-delay: 0.05s; } .animate-in:nth-child(3) { animation-delay: 0.1s; } .animate-in:nth-child(4) { animation-delay: 0.15s; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rdr-green); display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: var(--rdr-navy-hover); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- ════════ SIDEBAR ════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="../../../realdealride.com/public/frontend/images/logo-light.png" alt="RealDealRide Logo" style="height:28px; margin-right:12px; object-fit: contain;">
+      <div>
+        <span>AI Admin Console</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-link active" data-page="dashboard" onclick="switchPage('dashboard', this)"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a class="nav-link" data-page="support" onclick="switchPage('support', this)"><i class="bi bi-headset"></i> Live Support <span class="badge bg-danger ms-auto rounded-pill" style="font-size:10px;">1</span></a>
+      <a class="nav-link" data-page="tickets" onclick="switchPage('tickets', this)"><i class="bi bi-ticket-detailed-fill"></i> Support Tickets <span class="badge bg-warning text-dark ms-auto rounded-pill" style="font-size:10px;">2</span></a>
+      <div class="nav-section-label">Knowledge Base</div>
+      <a class="nav-link" data-page="documents" onclick="switchPage('documents', this)"><i class="bi bi-file-earmark-pdf-fill"></i> Documents</a>
+      <a class="nav-link" data-page="upload" onclick="switchPage('upload', this)"><i class="bi bi-cloud-arrow-up-fill"></i> Upload Document</a>
+      <a class="nav-link" data-page="categories" onclick="switchPage('categories', this)"><i class="bi bi-tags-fill"></i> Categories &amp; Tags</a>
+      <div class="nav-section-label">AI Performance</div>
+      <a class="nav-link" data-page="analytics" onclick="switchPage('analytics', this)"><i class="bi bi-graph-up"></i> Analytics</a>
+      <a class="nav-link" data-page="unanswered" onclick="switchPage('unanswered', this)"><i class="bi bi-question-circle-fill"></i> Unanswered Queries</a>
+      <div class="nav-section-label">Configuration</div>
+      <a class="nav-link" data-page="prompt" onclick="switchPage('prompt', this)"><i class="bi bi-chat-square-text-fill"></i> Prompt Template</a>
+      <a class="nav-link" data-page="settings" onclick="switchPage('settings', this)"><i class="bi bi-gear-fill"></i> System Settings</a>
+      <a class="nav-link" data-page="sandbox" onclick="switchPage('sandbox', this)"><i class="bi bi-terminal-fill"></i> Test Sandbox</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar">AD</div>
+      <div style="flex:1;min-width:0"><div class="user-name">Admin User</div><div class="user-role">Super Admin</div></div>
+      <i class="bi bi-box-arrow-right" style="color:#64748B;cursor:pointer;" title="Logout"></i>
+    </div>
+  </aside>
+
+  <!-- ════════ MAIN ════════ -->
+  <div class="main-wrapper">
+    <header class="top-header">
+      <div class="d-flex align-items-center gap-3">
+        <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('show')"><i class="bi bi-list"></i></button>
+        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        <span class="db-badge"><i class="bi bi-database-fill"></i> MariaDB 11.7+</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="live-dot me-1"></span>
+        <span style="font-size:12px;color:var(--rdr-muted);font-weight:500;">System Healthy</span>
+        <div style="width:1px;height:24px;background:var(--rdr-border);margin:0 8px;"></div>
+        <button class="btn btn-sm btn-outline-rdr" onclick="switchPage('sandbox', document.querySelector('[data-page=sandbox]'))"><i class="bi bi-terminal me-1"></i>Sandbox</button>
+        <button class="btn btn-sm btn-rdr" onclick="switchPage('upload', document.querySelector('[data-page=upload]'))"><i class="bi bi-plus-lg me-1"></i>Upload Doc</button>
+      </div>
+    </header>
+
+    <div class="content-area">
+
+      <!-- ═══ DASHBOARD ═══ -->
+      <div class="page-content active" id="page-dashboard">
+        <div class="row g-3 mb-4">
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card blue"><div class="stat-icon"><i class="bi bi-chat-dots-fill"></i></div><div class="stat-value" id="dashboardTotalQueries">12,847</div><div class="stat-label">Total Queries (30d)</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>18.3%</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card green"><div class="stat-icon"><i class="bi bi-bullseye"></i></div><div class="stat-value" id="dashboardAvgConfidence">0.84</div><div class="stat-label">Avg Confidence Score</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>3.1%</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card orange"><div class="stat-icon"><i class="bi bi-person-fill-up"></i></div><div class="stat-value" id="dashboardEscalationRate">11.2%</div><div class="stat-label">Escalation Rate</div><span class="stat-change down"><i class="bi bi-arrow-down-short"></i>2.4%</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card teal"><div class="stat-icon"><i class="bi bi-lightning-charge-fill"></i></div><div class="stat-value" id="dashboardAvgResponseTime">2.3s</div><div class="stat-label">Avg Response Time</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>0.4s faster</span></div></div>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card teal"><div class="stat-icon"><i class="bi bi-file-earmark-text-fill"></i></div><div class="stat-value" id="dashboardActiveDocs">34</div><div class="stat-label">Active KB Documents</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>6 new</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card green"><div class="stat-icon"><i class="bi bi-stars"></i></div><div class="stat-value" id="dashboardSatisfaction">4.6<span style="font-size:14px;color:var(--rdr-muted);">/5</span></div><div class="stat-label">Member Satisfaction</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>0.3</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card red"><div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div><div class="stat-value" id="dashboardUnansweredQueries">23</div><div class="stat-label">Unanswered Queries</div><span class="stat-change down"><i class="bi bi-arrow-down-short"></i>8 fewer</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card blue"><div class="stat-icon"><i class="bi bi-database-fill"></i></div><div class="stat-value" id="dashboardVectorChunks">8,412</div><div class="stat-label">Vector DB Chunks</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>1,240</span></div></div>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-xl-8">
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-bar-chart-fill me-2" style="color:var(--rdr-teal)"></i>Daily Query Volume (Last 14 Days)</h6><select class="form-select form-select-sm" style="width:auto;font-size:12px;"><option>Last 14 Days</option><option>Last 30 Days</option></select></div><div class="card-body-custom"><div class="bar-chart" id="queryChart"></div></div></div>
+          </div>
+          <div class="col-xl-4">
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-pie-chart-fill me-2" style="color:var(--rdr-teal)"></i>Query Classification</h6></div>
+            <div class="card-body-custom text-center">
+              <div class="donut-wrapper"><svg width="140" height="140" viewBox="0 0 140 140"><circle cx="70" cy="70" r="56" fill="none" stroke="#E2E8F0" stroke-width="14"/><circle cx="70" cy="70" r="56" fill="none" stroke="#17A2B8" stroke-width="14" stroke-dasharray="211 141" stroke-dashoffset="0" stroke-linecap="round"/><circle cx="70" cy="70" r="56" fill="none" stroke="#28A745" stroke-width="14" stroke-dasharray="70 282" stroke-dashoffset="-211" stroke-linecap="round"/><circle cx="70" cy="70" r="56" fill="none" stroke="#F59E0B" stroke-width="14" stroke-dasharray="42 310" stroke-dashoffset="-281" stroke-linecap="round"/><circle cx="70" cy="70" r="56" fill="none" stroke="#DC3545" stroke-width="14" stroke-dasharray="28 324" stroke-dashoffset="-323" stroke-linecap="round"/></svg><div class="donut-center"><div class="donut-value">12.8K</div><div class="donut-label">Total</div></div></div>
+              <div class="d-flex flex-wrap justify-content-center gap-3 mt-3" style="font-size:12px;"><span><i class="bi bi-circle-fill me-1" style="color:var(--rdr-teal);font-size:8px;"></i>Policy <b>60%</b></span><span><i class="bi bi-circle-fill me-1" style="color:var(--rdr-green);font-size:8px;"></i>How-To <b>20%</b></span><span><i class="bi bi-circle-fill me-1" style="color:var(--rdr-orange);font-size:8px;"></i>Account <b>12%</b></span><span><i class="bi bi-circle-fill me-1" style="color:var(--rdr-red);font-size:8px;"></i>Out-of-Scope <b>8%</b></span></div>
+            </div></div>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-xl-6">
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-question-circle me-2" style="color:var(--rdr-orange)"></i>Top Unanswered Questions</h6><a href="#" onclick="switchPage('unanswered', document.querySelector('[data-page=unanswered]'));return false;" style="font-size:12px;font-weight:600;color:var(--rdr-teal);text-decoration:none;">View All &rarr;</a></div>
+            <div class="card-body-custom" id="dashboardUnansweredList">
+              <div class="unanswered-item"><div class="unanswered-rank">1</div><div style="flex:1;font-size:13px">&ldquo;How do I extend my trip past the original return date?&rdquo;</div><div style="font-size:12px;font-weight:600;color:var(--rdr-muted);font-family:'JetBrains Mono',monospace;">47x</div></div>
+              <div class="unanswered-item"><div class="unanswered-rank">2</div><div style="flex:1;font-size:13px">&ldquo;Can I drop the car off at a different location?&rdquo;</div><div style="font-size:12px;font-weight:600;color:var(--rdr-muted);font-family:'JetBrains Mono',monospace;">38x</div></div>
+              <div class="unanswered-item"><div class="unanswered-rank">3</div><div style="flex:1;font-size:13px">&ldquo;What happens if the Owner cancels on me last minute?&rdquo;</div><div style="font-size:12px;font-weight:600;color:var(--rdr-muted);font-family:'JetBrains Mono',monospace;">31x</div></div>
+              <div class="unanswered-item"><div class="unanswered-rank">4</div><div style="flex:1;font-size:13px">&ldquo;Are there age restrictions for renting a car?&rdquo;</div><div style="font-size:12px;font-weight:600;color:var(--rdr-muted);font-family:'JetBrains Mono',monospace;">24x</div></div>
+              <div class="unanswered-item"><div class="unanswered-rank">5</div><div style="flex:1;font-size:13px">&ldquo;How do I get a receipt for my trip?&rdquo;</div><div style="font-size:12px;font-weight:600;color:var(--rdr-muted);font-family:'JetBrains Mono',monospace;">19x</div></div>
+            </div></div>
+          </div>
+          <div class="col-xl-6">
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-clock-history me-2" style="color:var(--rdr-teal)"></i>Recent Activity</h6></div>
+            <div class="card-body-custom" style="max-height:320px;overflow-y:auto;">
+              <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(40,167,69,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-file-earmark-plus" style="color:var(--rdr-green);"></i></div><div><div style="font-size:13px;font-weight:600;">New document uploaded</div><div style="font-size:12px;color:var(--rdr-muted);">&ldquo;Vehicle Standards v2.1&rdquo; &mdash; HNSW index auto-updated</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">3 minutes ago</div></div></div>
+              <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(23,162,184,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-arrow-repeat" style="color:var(--rdr-teal);"></i></div><div><div style="font-size:13px;font-weight:600;">Re-indexing complete</div><div style="font-size:12px;color:var(--rdr-muted);">Trip Extras v1.2 &mdash; 14 chunks, VECTOR INDEX auto-maintained</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">18 minutes ago</div></div></div>
+              <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(245,158,11,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-exclamation-triangle" style="color:var(--rdr-orange);"></i></div><div><div style="font-size:13px;font-weight:600;">Escalation rate alert</div><div style="font-size:12px;color:var(--rdr-muted);">Rate hit 22.1% between 2:00&ndash;3:00 PM (threshold: 20%)</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">1 hour ago</div></div></div>
+              <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(23,162,184,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-chat-square-text" style="color:var(--rdr-teal);"></i></div><div><div style="font-size:13px;font-weight:600;">Prompt template updated</div><div style="font-size:12px;color:var(--rdr-muted);">Fallback message refined by admin@realdealride.com</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">2 hours ago</div></div></div>
+              <div class="d-flex align-items-start gap-3"><div style="width:32px;height:32px;border-radius:8px;background:rgba(220,53,69,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-trash3" style="color:var(--rdr-red);"></i></div><div><div style="font-size:13px;font-weight:600;">Document archived</div><div style="font-size:12px;color:var(--rdr-muted);">&ldquo;Old Cancellation Policy v1.0&rdquo; — embeddings deactivated</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">4 hours ago</div></div></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ LIVE SUPPORT (NEW) ═══ -->
+      <div class="page-content" id="page-support">
+        <div class="row g-4 h-100" style="min-height: calc(100vh - 120px);">
+          <div class="col-xl-4 d-flex flex-column gap-3">
+            <div class="rdr-card flex-grow-1">
+              <div class="card-header-custom">
+                <h6><i class="bi bi-people-fill me-2" style="color:var(--rdr-teal)"></i>Support Queue</h6>
+              </div>
+              <div class="card-body-custom p-0" id="supportQueueList">
+                <div class="p-3 border-bottom support-session-item active" id="ssession-8842" style="background: rgba(220,53,69,0.05); cursor: pointer; border-left: 3px solid var(--rdr-red);" onclick="selectSupportSession('8842')">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span style="font-size:13px;font-weight:600;">Session #8842 <span class="badge bg-danger ms-1" style="font-size:9px;">Escalated</span></span>
+                    <span style="font-size:11px;color:var(--rdr-muted);">Just now</span>
+                  </div>
+                  <div style="font-size:12px;color:var(--rdr-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">I need to talk to a human about my booking.</div>
+                </div>
+                <div class="p-3 border-bottom support-session-item" id="ssession-8839" style="cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'" onclick="selectSupportSession('8839')">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span style="font-size:13px;font-weight:600;">Session #8839</span>
+                    <span style="font-size:11px;color:var(--rdr-muted);">4m ago</span>
+                  </div>
+                  <div style="font-size:12px;color:var(--rdr-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">AI confidence 0.42 on "Late fee waiver"</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-8">
+            <div class="rdr-card h-100 d-flex flex-column">
+              <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 id="activeSupportHeader"><i class="bi bi-chat-text-fill me-2" style="color:var(--rdr-blue)"></i>Active Chat: Session #8842</h6>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span id="supportConnectionStatus" class="badge bg-secondary" style="font-size:11px;">Disconnected</span>
+                  <button class="btn btn-sm btn-rdr" id="takeoverBtn" onclick="toggleTakeover()"><i class="bi bi-telephone-inbound-fill me-1"></i> Accept Takeover</button>
+                </div>
+              </div>
+              <div class="card-body-custom flex-grow-1 d-flex flex-column" style="background:#F8FAFC; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                
+                <!-- Takeover connection bar -->
+                <div class="p-2 mb-3 bg-light border rounded d-flex align-items-center justify-content-between" style="font-size: 13px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted" style="font-weight: 500;">WebSocket:</span>
+                    <input type="text" id="wsUriInput" value="ws://localhost:8085/ws/admin" class="form-control form-control-sm" style="width: 250px; font-size:12px; font-family: monospace;">
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted" style="font-weight: 500;">Session ID:</span>
+                    <input type="text" id="wsSessionInput" value="8842" class="form-control form-control-sm" style="width: 100px; font-size:12px; font-family: monospace;">
+                  </div>
+                </div>
+
+                <div class="flex-grow-1" id="supportChatArea" style="overflow-y:auto; padding: 10px; min-height: 250px; max-height: 400px; border: 1px solid var(--rdr-border); border-radius: 8px; background: #fff;">
+                  <div class="text-center mb-3"><span class="badge bg-secondary" style="font-size:10px;">Chat Started 2:14 PM</span></div>
+                  
+                  <div class="chat-bubble user" style="background:#E2E8F0; color:#1E293B; margin-left: auto; border-bottom-right-radius: 4px;">Hi, I booked a Honda Civic for tomorrow.</div>
+                  <div class="chat-bubble ai" style="background:#F1F5F9; color:var(--rdr-text); border-bottom-left-radius: 4px;">Hello! I see you have a Honda Civic booked for tomorrow. How can I help you with your trip?</div>
+                  <div class="chat-bubble user" style="background:#E2E8F0; color:#1E293B; margin-left: auto; border-bottom-right-radius: 4px;">I need to change the pickup location.</div>
+                  <div class="chat-bubble ai" style="background:#F1F5F9; color:var(--rdr-text); border-bottom-left-radius: 4px;">To change your pickup location, you can go to your "Trips" dashboard and select "Modify Trip". Please note that the Host must approve the new location.<div class="source-tag">Source: Trip Modifications</div></div>
+                  <div class="chat-bubble user" style="background:#E2E8F0; color:#1E293B; margin-left: auto; border-bottom-right-radius: 4px;">The host isn't answering and I need this changed now. I need to talk to a human.</div>
+                  
+                  <div class="text-center my-3"><span class="badge bg-danger" style="font-size:10px;">User Requested Human Support (2:16 PM)</span></div>
+                </div>
+
+                <div class="mt-3">
+                  <div class="input-group">
+                    <input type="text" id="supportMessageInput" class="form-control" placeholder="Type your message to the user..." style="font-size:13px;" disabled onkeydown="if(event.key==='Enter') sendSupportLiveMessage()">
+                    <button class="btn btn-rdr" id="supportSendBtn" onclick="sendSupportLiveMessage()" disabled><i class="bi bi-send-fill"></i></button>
+                  </div>
+                  <div class="mt-2" style="font-size:11px;color:var(--rdr-muted);" id="supportStatusHelp">Click "Accept Takeover" to bridge your connection and reply.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ═══ SUPPORT TICKETS (NEW) ═══ -->
+      <div class="page-content" id="page-tickets">
+        <div class="row g-3 mb-4">
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card red"><div class="stat-icon"><i class="bi bi-ticket-perforated-fill"></i></div><div class="stat-value" id="statTotalTickets">128</div><div class="stat-label">Total Tickets Created</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>12% this week</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card orange"><div class="stat-icon"><i class="bi bi-envelope-exclamation-fill"></i></div><div class="stat-value" id="statOpenTickets">6</div><div class="stat-label">Open / Unresolved</div><span class="stat-change down"><i class="bi bi-arrow-down-short"></i>2 fewer</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card blue"><div class="stat-icon"><i class="bi bi-hourglass-split"></i></div><div class="stat-value" id="statProgressTickets">14</div><div class="stat-label">In Progress</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>4 active</span></div></div>
+          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card green"><div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div><div class="stat-value" id="statResolvedTickets">108</div><div class="stat-label">Resolved / Closed</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>94.2% rate</span></div></div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+          <div class="input-group" style="max-width:320px;">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search" style="color:var(--rdr-muted);"></i></span>
+            <input type="text" class="form-control border-start-0" placeholder="Search tickets..." style="font-size:13px;" id="ticketSearchInput" onkeyup="renderTicketsList()">
+          </div>
+          <select class="form-select" style="width:auto;font-size:13px;" id="ticketCategoryFilter" onchange="renderTicketsList()">
+            <option value="All">All Categories</option>
+            <option value="Breakdown">Breakdown &amp; Safety</option>
+            <option value="Billing">Billing &amp; Payments</option>
+            <option value="General FAQ">General FAQ</option>
+            <option value="Account">Account Settings</option>
+          </select>
+          <select class="form-select" style="width:auto;font-size:13px;" id="ticketPriorityFilter" onchange="renderTicketsList()">
+            <option value="All">All Priorities</option>
+            <option value="Urgent">Urgent</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <select class="form-select" style="width:auto;font-size:13px;" id="ticketStatusFilter" onchange="renderTicketsList()">
+            <option value="All">All Statuses</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select>
+          <div class="ms-auto">
+            <button class="btn btn-rdr" onclick="openCreateTicketMock()"><i class="bi bi-plus-lg me-1"></i>Create Ticket</button>
+          </div>
+        </div>
+
+        <div class="row g-4" style="min-height: 500px;">
+          <!-- Left Column: Tickets Queue Sidebar -->
+          <div class="col-xl-4 col-md-5 d-flex flex-column gap-3">
+            <div class="rdr-card flex-grow-1" style="max-height: 600px; overflow-y: auto;">
+              <div class="card-header-custom">
+                <h6><i class="bi bi-ticket-detailed-fill me-2" style="color:var(--rdr-teal)"></i>Tickets Queue</h6>
+              </div>
+              <div class="card-body-custom p-0" id="ticketsListSidebar">
+                <!-- Dynamic Ticket Cards go here -->
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Column: Detail View & Reply Panel -->
+          <div class="col-xl-8 col-md-7 d-flex flex-column">
+            <!-- Selected Ticket Details Panel -->
+            <div class="rdr-card flex-grow-1 d-flex flex-column" id="ticketDetailPanel" style="display: none !important;">
+              <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 id="detailTicketTitle" style="font-weight:700;">Ticket #TKT-782415</h6>
+                  <span id="detailTicketSubject" style="font-size:12.5px; font-weight: 500; color:var(--rdr-text);" class="d-block mt-1">Car didn't start at airport</span>
+                </div>
+                <span class="badge bg-secondary-subtle text-secondary" id="detailCategoryBadge">Breakdown</span>
+              </div>
+              <div class="card-body-custom flex-grow-1 d-flex flex-column" style="background:#F8FAFC; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; min-height: 480px;">
+                
+                <!-- Metadata Grid -->
+                <div class="row g-3 mb-3 p-3 bg-white border rounded mx-0 shadow-sm" style="border-radius: 8px;">
+                  <div class="col-md-5 col-sm-12">
+                    <span class="d-block text-muted" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Customer</span>
+                    <span id="detailCustomerName" style="font-size: 13.5px; font-weight: 600; color: var(--rdr-text);">Alex Rivera</span>
+                    <span id="detailCustomerEmail" class="d-block text-muted" style="font-size: 11px;">alex.rivera@example.com</span>
+                  </div>
+                  <div class="col-md-3 col-sm-6">
+                    <span class="d-block text-muted" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Change Status</span>
+                    <select class="form-select form-select-sm mt-1" style="font-size: 12px; padding: 4px 8px;" id="detailStatusSelect" onchange="updateDetailTicketStatus()">
+                      <option value="Open">Open</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Resolved">Resolved</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 col-sm-6">
+                    <span class="d-block text-muted" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Priority Level</span>
+                    <select class="form-select form-select-sm mt-1" style="font-size: 12px; padding: 4px 8px;" id="detailPrioritySelect" onchange="updateDetailTicketPriority()">
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Description -->
+                <div class="card p-3 mb-3 border-0 bg-white shadow-sm" style="border-radius:8px;">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Issue Description</span>
+                    <span id="detailTicketDate" class="text-muted" style="font-size: 11px;">May 20, 2026</span>
+                  </div>
+                  <p style="font-size: 13.5px; color: var(--rdr-text); line-height: 1.5;" class="mb-0" id="detailMessageContent"></p>
+                </div>
+
+                <!-- Conversation Thread -->
+                <span class="d-block text-muted mb-2 ms-1" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Conversation Thread</span>
+                <div id="detailChatThread" class="flex-grow-1 mb-3 p-3 bg-white border rounded shadow-sm" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                  <!-- Messages go here -->
+                </div>
+
+                <!-- Draft Reply -->
+                <div class="mt-auto">
+                  <label class="form-label text-muted" style="font-size:10px; font-weight:600; text-transform: uppercase; letter-spacing: 0.5px;">Draft Reply (Sends Email Notification)</label>
+                  <div class="input-group">
+                    <textarea class="form-control" id="detailReplyTextarea" rows="2" placeholder="Type support reply here..." style="font-size: 13px; resize: none;"></textarea>
+                    <button class="btn btn-rdr d-flex align-items-center justify-content-center" onclick="submitDetailTicketReply()"><i class="bi bi-send-fill"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Placeholder Panel -->
+            <div id="ticketPlaceholder" class="rdr-card flex-grow-1 d-flex flex-column text-center justify-content-center align-items-center p-5" style="min-height: 480px; background:#F8FAFC;">
+              <i class="bi bi-ticket-detailed text-muted mb-3" style="font-size: 56px;"></i>
+              <h5 class="text-secondary" style="font-weight: 600;">No Ticket Selected</h5>
+              <p class="text-muted" style="font-size: 13.5px; max-width: 320px;">Choose a ticket from the left sidebar queue to view details, update status, and draft email replies.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="page-content" id="page-documents">
+        <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+          <div class="input-group" style="max-width:320px;"><span class="input-group-text bg-white border-end-0"><i class="bi bi-search" style="color:var(--rdr-muted);"></i></span><input type="text" class="form-control border-start-0" placeholder="Search documents..." style="font-size:13px;"></div>
+          <select class="form-select" style="width:auto;font-size:13px;"><option>All Categories</option><option>Trip Extras</option><option>Protection Plans</option><option>Cancellation</option><option>Vehicle Standards</option><option>Account FAQ</option></select>
+          <select class="form-select" style="width:auto;font-size:13px;"><option>All Statuses</option><option>Active</option><option>Processing</option><option>Archived</option></select>
+          <div class="ms-auto"><button class="btn btn-rdr" onclick="switchPage('upload', document.querySelector('[data-page=upload]'))"><i class="bi bi-plus-lg me-1"></i>Upload Document</button></div>
+        </div>
+        <div class="rdr-card"><div class="table-responsive"><table class="table rdr-table mb-0"><thead><tr><th>Document</th><th>Category</th><th>Version</th><th>Chunks</th><th>Uploaded</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead><tbody id="kbTableBody">
+          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Trip Extras Policy</b></td><td><span class="badge-status badge-active">Trip Extras</span></td><td>1.2</td><td>14</td><td>May 2, 2026</td><td><span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary" title="View"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary" title="Replace"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary" title="Archive"><i class="bi bi-archive"></i></button></td></tr>
+          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Protection Plans Guide</b></td><td><span class="badge-status badge-processing">Protection</span></td><td>3.0</td><td>47</td><td>Apr 28, 2026</td><td><span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button></td></tr>
+          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Cancellation &amp; Refund Policy</b></td><td><span class="badge-status badge-medium">Cancellation</span></td><td>2.1</td><td>28</td><td>Apr 20, 2026</td><td><span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button></td></tr>
+          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Vehicle Standards &amp; Requirements</b></td><td><span class="badge-status badge-low">Vehicle</span></td><td>2.1</td><td>36</td><td>Apr 15, 2026</td><td><span class="badge-status badge-processing"><i class="bi bi-arrow-repeat me-1"></i>Processing</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button></td></tr>
+          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Account &amp; Billing FAQ</b></td><td><span class="badge-status badge-active">Account</span></td><td>1.0</td><td>22</td><td>Apr 10, 2026</td><td><span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button></td></tr>
+          <tr style="opacity:0.6;"><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#94A3B8;"></i><b>Old Cancellation Policy</b></td><td><span class="badge-status badge-archived">Cancellation</span></td><td>1.0</td><td>18</td><td>Jan 5, 2026</td><td><span class="badge-status badge-archived"><i class="bi bi-archive-fill me-1"></i>Archived</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
+        </tbody></table></div></div>
+      </div>
+
+      <!-- ═══ UPLOAD ═══ -->
+      <div class="page-content" id="page-upload">
+        <div class="row justify-content-center"><div class="col-xl-8">
+          <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-cloud-arrow-up-fill me-2" style="color:var(--rdr-teal)"></i>Upload Knowledge Base Document</h6></div>
+          <div class="card-body-custom">
+            <div class="upload-zone mb-4" id="uploadZone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('fileInput').click()">
+              <i class="bi bi-cloud-arrow-up d-block"></i>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Drop your PDF here or click to browse</div>
+              <div style="font-size:12px;color:var(--rdr-muted);">Supported: PDF files up to 50MB &bull; VECTOR INDEX auto-updates on ingest</div>
+              <input type="file" id="fileInput" accept=".pdf" style="display:none;" onchange="handleFileSelect(this)">
+            </div>
+            <div id="filePreview" class="mb-4" style="display:none;"><div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:#F1F5F9;"><i class="bi bi-file-earmark-pdf-fill" style="font-size:28px;color:#DC3545;"></i><div class="flex-grow-1"><div id="fileName" style="font-size:13px;font-weight:600;"></div><div id="fileSize" style="font-size:12px;color:var(--rdr-muted);"></div></div><button class="btn btn-sm btn-outline-danger" onclick="clearFile()"><i class="bi bi-x-lg"></i></button></div></div>
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label" style="font-size:13px;font-weight:600;">Document Title <span class="text-danger">*</span></label><input type="text" id="kbUploadTitle" class="form-control" placeholder="e.g., Trip Extras Policy" style="font-size:13px;"></div>
+              <div class="col-md-6"><label class="form-label" style="font-size:13px;font-weight:600;">Category <span class="text-danger">*</span></label><select class="form-select" id="kbUploadCategory" style="font-size:13px;"><option value="">Select category...</option><option>Trip Extras</option><option>Protection Plans</option><option>Cancellation</option><option>Vehicle Standards</option><option>Account FAQ</option><option>+ Create New Category</option></select></div>
+              <div class="col-md-4"><label class="form-label" style="font-size:13px;font-weight:600;">Version <span class="text-danger">*</span></label><input type="text" id="kbUploadVersion" class="form-control" placeholder="e.g., 1.0" style="font-size:13px;"></div>
+              <div class="col-md-4"><label class="form-label" style="font-size:13px;font-weight:600;">Effective Date</label><input type="date" class="form-control" style="font-size:13px;"></div>
+              <div class="col-md-4"><label class="form-label" style="font-size:13px;font-weight:600;">Priority</label><select class="form-select" style="font-size:13px;"><option>Normal</option><option>High</option><option>Low</option></select></div>
+              <div class="col-12"><label class="form-label" style="font-size:13px;font-weight:600;">Tags</label><input type="text" class="form-control" placeholder="Enter tags separated by commas (e.g., refuel, extras, gear)" style="font-size:13px;"></div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top:1px solid var(--rdr-border);"><button class="btn btn-outline-secondary" style="font-size:13px;">Cancel</button><button class="btn btn-rdr" onclick="uploadDocument()"><i class="bi bi-cloud-arrow-up me-1"></i>Upload &amp; Index</button></div>
+          </div></div>
+        </div></div>
+      </div>
+
+      <!-- ═══ CATEGORIES ═══ -->
+      <div class="page-content" id="page-categories">
+        <div class="row g-4">
+          <div class="col-xl-7">
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-tags-fill me-2" style="color:var(--rdr-teal)"></i>Document Categories</h6><button class="btn btn-sm btn-rdr" data-bs-toggle="modal" data-bs-target="#categoryModal"><i class="bi bi-plus-lg me-1"></i>Add Category</button></div>
+            <div class="table-responsive"><table class="table rdr-table mb-0"><thead><tr><th>Category</th><th>Documents</th><th>Chunks</th><th>Priority Boost</th><th style="text-align:right;">Actions</th></tr></thead><tbody>
+              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-teal);"></i><b>Trip Extras</b></td><td>3</td><td>42</td><td><span class="badge-status badge-active">+0.10</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
+              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-green);"></i><b>Protection Plans</b></td><td>2</td><td>61</td><td><span class="badge-status badge-active">+0.05</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
+              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-orange);"></i><b>Cancellation</b></td><td>2</td><td>46</td><td><span class="badge-status badge-medium">+0.08</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
+              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-blue);"></i><b>Vehicle Standards</b></td><td>1</td><td>36</td><td><span class="badge-status badge-low">0.00</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
+              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-red);"></i><b>Account FAQ</b></td><td>1</td><td>22</td><td><span class="badge-status badge-low">0.00</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
+            </tbody></table></div></div>
+          </div>
+          <div class="col-xl-5"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-info-circle me-2" style="color:var(--rdr-teal)"></i>About Categories</h6></div><div class="card-body-custom" style="font-size:13px;color:var(--rdr-muted);line-height:1.7;"><p><b style="color:var(--rdr-text);">Categories</b> organize your KB documents and influence retrieval. When a Member asks a question, <code>VEC_DISTANCE_COSINE()</code> finds the nearest chunks and the category <b style="color:var(--rdr-text);">Priority Boost</b> adds a score bonus to surface the most relevant category first.</p><p><b style="color:var(--rdr-text);">Tags</b> provide finer-grained filtering. A document can have multiple tags across categories for cross-topic discoverability.</p></div></div></div>
+        </div>
+      </div>
+
+      <!-- ═══ ANALYTICS ═══ -->
+      <div class="page-content" id="page-analytics">
+        <div class="section-tabs"><button class="stab active">Overview</button><button class="stab">Response Quality</button><button class="stab">Escalations</button><button class="stab">Performance</button></div>
+        <div class="row g-3 mb-4">
+          <div class="col-xl-3 col-md-6"><div class="stat-card blue"><div class="stat-icon"><i class="bi bi-chat-dots-fill"></i></div><div class="stat-value" id="statQueriesTotal">12,847</div><div class="stat-label">Total Queries</div></div></div>
+          <div class="col-xl-3 col-md-6"><div class="stat-card green"><div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div><div class="stat-value" id="statQueriesAnswered">88.8%</div><div class="stat-label">Successfully Answered</div></div></div>
+          <div class="col-xl-3 col-md-6"><div class="stat-card orange"><div class="stat-icon"><i class="bi bi-arrow-left-right"></i></div><div class="stat-value" id="statQueriesEscalated">1,439</div><div class="stat-label">Escalated to Agent</div></div></div>
+          <div class="col-xl-3 col-md-6"><div class="stat-card teal"><div class="stat-icon"><i class="bi bi-stars"></i></div><div class="stat-value" id="statQueriesSatisfaction">4.6</div><div class="stat-label">Satisfaction Score</div></div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-xl-6"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-speedometer2 me-2" style="color:var(--rdr-teal)"></i>Response Time Distribution</h6></div><div class="card-body-custom">
+            <div class="mb-3"><div class="d-flex justify-content-between mb-1" style="font-size:12px;"><span>&lt; 2 seconds</span><span class="fw-bold">42%</span></div><div class="progress" style="height:8px;border-radius:4px;"><div class="progress-bar" style="width:42%;background:var(--rdr-green);border-radius:4px;"></div></div></div>
+            <div class="mb-3"><div class="d-flex justify-content-between mb-1" style="font-size:12px;"><span>2 &ndash; 3 seconds</span><span class="fw-bold">31%</span></div><div class="progress" style="height:8px;border-radius:4px;"><div class="progress-bar" style="width:31%;background:var(--rdr-teal);border-radius:4px;"></div></div></div>
+            <div class="mb-3"><div class="d-flex justify-content-between mb-1" style="font-size:12px;"><span>3 &ndash; 5 seconds</span><span class="fw-bold">21%</span></div><div class="progress" style="height:8px;border-radius:4px;"><div class="progress-bar" style="width:21%;background:var(--rdr-orange);border-radius:4px;"></div></div></div>
+            <div><div class="d-flex justify-content-between mb-1" style="font-size:12px;"><span>&gt; 5 seconds</span><span class="fw-bold">6%</span></div><div class="progress" style="height:8px;border-radius:4px;"><div class="progress-bar" style="width:6%;background:var(--rdr-red);border-radius:4px;"></div></div></div>
+          </div></div></div>
+          <div class="col-xl-6"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-bullseye me-2" style="color:var(--rdr-green)"></i>Confidence Score Distribution</h6></div><div class="card-body-custom">
+            <div class="mb-3"><div class="d-flex justify-content-between mb-1" style="font-size:12px;"><span>0.90 &ndash; 1.00 (Excellent)</span><span class="fw-bold">35%</span></div><div class="progress" style="height:8px;border-radius:4px;"><div class="progress-bar" style="width:35%;background:var(--rdr-green);border-radius:4px;"></div></div></div>
+            <div class="mb-3"><div class="d-flex justify-content-between mb-1" style="font-size:12px;"><span>0.80 &ndash; 0.89 (Good)</span><span class="fw-bold">33%</span></div><div class="progress" style="height:8px;border-radius:4px;"><div class="progress-bar" style="width:33%;background:var(--rdr-teal);border-radius:4px;"></div></div></div>
+            <div class="mb-3"><div class="d-flex justify-content-between mb-1" style="font-size:12px;"><span>0.70 &ndash; 0.79 (Acceptable)</span><span class="fw-bold">21%</span></div><div class="progress" style="height:8px;border-radius:4px;"><div class="progress-bar" style="width:21%;background:var(--rdr-orange);border-radius:4px;"></div></div></div>
+            <div><div class="d-flex justify-content-between mb-1" style="font-size:12px;"><span>Below 0.70 (Fallback)</span><span class="fw-bold">11%</span></div><div class="progress" style="height:8px;border-radius:4px;"><div class="progress-bar" style="width:11%;background:var(--rdr-red);border-radius:4px;"></div></div></div>
+          </div></div></div>
+        </div>
+      </div>
+
+      <!-- ═══ UNANSWERED ═══ -->
+      <div class="page-content" id="page-unanswered">
+        <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-question-circle-fill me-2" style="color:var(--rdr-orange)"></i>Top Unanswered Queries (Last 30 Days)</h6><button class="btn btn-sm btn-outline-rdr"><i class="bi bi-download me-1"></i>Export CSV</button></div>
+        <div class="table-responsive"><table class="table rdr-table mb-0"><thead><tr><th>#</th><th>Query</th><th>Times Asked</th><th>Avg Confidence</th><th>Suggested Action</th><th style="text-align:right;">Action</th></tr></thead><tbody id="unansweredTableBody">
+          <tr><td>1</td><td>&ldquo;How do I extend my trip past the original return date?&rdquo;</td><td><b>47</b></td><td><span style="color:var(--rdr-red);">0.31</span></td><td><span class="badge-status badge-high">Create KB Document</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-rdr">Create Doc</button></td></tr>
+          <tr><td>2</td><td>&ldquo;Can I drop the car off at a different location?&rdquo;</td><td><b>38</b></td><td><span style="color:var(--rdr-red);">0.28</span></td><td><span class="badge-status badge-high">Create KB Document</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-rdr">Create Doc</button></td></tr>
+          <tr><td>3</td><td>&ldquo;What happens if the Owner cancels on me last minute?&rdquo;</td><td><b>31</b></td><td><span style="color:var(--rdr-orange);">0.52</span></td><td><span class="badge-status badge-medium">Expand Cancellation Doc</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-rdr">Edit Doc</button></td></tr>
+          <tr><td>4</td><td>&ldquo;Are there age restrictions for renting?&rdquo;</td><td><b>24</b></td><td><span style="color:var(--rdr-red);">0.35</span></td><td><span class="badge-status badge-high">Create KB Document</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-rdr">Create Doc</button></td></tr>
+          <tr><td>5</td><td>&ldquo;How do I get a receipt for my trip?&rdquo;</td><td><b>19</b></td><td><span style="color:var(--rdr-orange);">0.48</span></td><td><span class="badge-status badge-medium">Add to Account FAQ</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-rdr">Edit Doc</button></td></tr>
+        </tbody></table></div></div>
+      </div>
+
+      <!-- ═══ PROMPT TEMPLATE ═══ -->
+      <div class="page-content" id="page-prompt">
+        <div class="row g-4">
+          <div class="col-xl-8"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-chat-square-text-fill me-2" style="color:var(--rdr-teal)"></i>System Prompt Template</h6><button class="btn btn-sm btn-rdr ms-auto" onclick="saveAiConfig()">Save Prompts</button><span style="font-size:11px;color:var(--rdr-muted);">Last edited 2 hours ago</span></div>
+          <div class="card-body-custom">
+            <label class="form-label" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);">System Instructions</label>
+            <textarea id="sysPromptInput" class="prompt-editor form-control mb-3">You are the RealDealRide AI Assistant, helping Members with questions about our peer-to-peer car rental platform.
+
+RULES:
+- ONLY answer based on the provided knowledge base context
+- If the context does not contain the answer, use the fallback message
+- Be friendly, helpful, clear, and concise
+- Never invent policies, fees, percentages, or procedures
+- Never use legal jargon or overly technical language
+- Always cite the source document when answering
+- If the Member asks about their specific account, billing, or personal trip details, escalate to a human agent
+
+TONE: Conversational, warm, and professional.</textarea>
+            <label class="form-label" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);">Fallback Message</label>
+            <textarea id="fallbackPromptInput" class="prompt-editor form-control mb-3" style="min-height:80px;">I want to make sure I give you the right information on that topic. Let me connect you with a member of our support team who can help. One moment please!</textarea>
+            <label class="form-label" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);">Escalation Message</label>
+            <textarea id="escalatePromptInput" class="prompt-editor form-control" style="min-height:80px;">I'd be happy to help with that, but I'll need to connect you with one of our support team members who can access your account details. Hang tight — someone will be with you shortly!</textarea>
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top:1px solid var(--rdr-border);"><span style="font-size:12px;color:var(--rdr-muted);"><i class="bi bi-info-circle me-1"></i>Changes take effect within 60 seconds</span><div class="d-flex gap-2"><button class="btn btn-outline-secondary" style="font-size:13px;">Revert</button><button class="btn btn-rdr"><i class="bi bi-check-lg me-1"></i>Save Changes</button></div></div>
+          </div></div></div>
+          <div class="col-xl-4"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-clock-history me-2" style="color:var(--rdr-teal)"></i>Version History</h6></div><div class="card-body-custom">
+            <div class="d-flex align-items-center gap-2 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:6px;height:6px;border-radius:50%;background:var(--rdr-green);flex-shrink:0;"></div><div style="font-size:12px;"><b>Current</b> &mdash; May 4, 2026 2:15 PM<br><span style="color:var(--rdr-muted);">Refined fallback message tone</span></div></div>
+            <div class="d-flex align-items-center gap-2 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:6px;height:6px;border-radius:50%;background:var(--rdr-muted);flex-shrink:0;"></div><div style="font-size:12px;">v3 &mdash; Apr 30, 2026<br><span style="color:var(--rdr-muted);">Added account-specific escalation rule</span></div></div>
+            <div class="d-flex align-items-center gap-2"><div style="width:6px;height:6px;border-radius:50%;background:var(--rdr-muted);flex-shrink:0;"></div><div style="font-size:12px;">v2 &mdash; Apr 15, 2026<br><span style="color:var(--rdr-muted);">Initial production prompt</span></div></div>
+          </div></div></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!--  SYSTEM SETTINGS (UPDATED: HNSW Index Config Card) -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <div class="page-content" id="page-settings">
+        <div class="row g-4">
+          <!-- RAG Pipeline Config -->
+          <div class="col-xl-6">
+            <div class="rdr-card mb-4"><div class="card-header-custom"><h6><i class="bi bi-sliders me-2" style="color:var(--rdr-teal)"></i>RAG Pipeline Configuration</h6><button class="btn btn-sm btn-rdr ms-auto" onclick="saveAiConfig()">Save Settings</button></div>
+            <div class="card-body-custom">
+              <div class="mb-4"><div class="d-flex justify-content-between align-items-center mb-2"><label style="font-size:13px;font-weight:600;">Confidence Threshold</label><span class="range-display" id="confVal">0.70</span></div><input type="range" id="confThresholdInput" class="form-range" min="0.50" max="0.95" step="0.01" value="0.70" oninput="document.getElementById('confVal').textContent=this.value"><div class="d-flex justify-content-between" style="font-size:10px;color:var(--rdr-muted);"><span>0.50 (Lenient)</span><span>0.95 (Strict)</span></div></div>
+              <div class="mb-4"><div class="d-flex justify-content-between align-items-center mb-2"><label style="font-size:13px;font-weight:600;">Top-K Retrieved Chunks</label><span class="range-display" id="topkVal">5</span></div><input type="range" id="topkInput" class="form-range" min="1" max="15" step="1" value="5" oninput="document.getElementById('topkVal').textContent=this.value"><div class="d-flex justify-content-between" style="font-size:10px;color:var(--rdr-muted);"><span>1 (Focused)</span><span>15 (Broad)</span></div></div>
+              <div class="mb-4"><div class="d-flex justify-content-between align-items-center mb-2"><label style="font-size:13px;font-weight:600;">Chunk Size (Tokens)</label><span class="range-display" id="chunkVal">350</span></div><input type="range" id="chunkSizeInput" class="form-range" min="200" max="500" step="25" value="350" oninput="document.getElementById('chunkVal').textContent=this.value"><div class="d-flex justify-content-between" style="font-size:10px;color:var(--rdr-muted);"><span>200</span><span>500</span></div></div>
+              <div><div class="d-flex justify-content-between align-items-center mb-2"><label style="font-size:13px;font-weight:600;">Chunk Overlap (Tokens)</label><span class="range-display" id="overlapVal">75</span></div><input type="range" id="chunkOverlapInput" class="form-range" min="50" max="100" step="5" value="75" oninput="document.getElementById('overlapVal').textContent=this.value"><div class="d-flex justify-content-between" style="font-size:10px;color:var(--rdr-muted);"><span>50</span><span>100</span></div></div>
+            </div></div>
+          </div>
+
+          <div class="col-xl-6">
+            <!-- LLM Config -->
+            <div class="rdr-card mb-4"><div class="card-header-custom"><h6><i class="bi bi-cpu me-2" style="color:var(--rdr-blue)"></i>LLM &amp; Embedding Configuration</h6></div>
+            <div class="card-body-custom">
+              <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">LLM Provider</label><select id="llmModelInput" class="form-select" style="font-size:13px;"><option value="gemini-3.1-flash-lite">Google Gemini 3.1 Flash Lite</option><option value="gemini-1.5-pro">Google Gemini 1.5 Pro</option><option value="claude-3-sonnet">Anthropic Claude 3 Sonnet</option></select></div>
+              <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Embedding Model</label><select class="form-select" style="font-size:13px;"><option>text-embedding-ada-002 (1536 dim)</option><option>text-embedding-3-small (1536 dim)</option><option>text-embedding-3-large (3072 dim)</option></select></div>
+              <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Max Response Tokens</label><input type="number" class="form-control" value="500" style="font-size:13px;"></div>
+              <div><label class="form-label" style="font-size:13px;font-weight:600;">Temperature</label><div class="d-flex align-items-center gap-3"><input type="range" id="temperatureInput" class="form-range flex-grow-1" min="0" max="1" step="0.05" value="0.2" oninput="document.getElementById('tempVal').textContent=this.value"><span class="range-display" id="tempVal" style="font-size:16px;min-width:40px;">0.2</span></div></div>
+            </div></div>
+
+            <!-- Alert Thresholds -->
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-bell-fill me-2" style="color:var(--rdr-orange)"></i>Alert Thresholds</h6></div>
+            <div class="card-body-custom">
+              <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Escalation Rate Alert (%)</label><input type="number" id="escRateAlertInput" class="form-control" value="20" style="font-size:13px;"></div>
+              <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Response Time Alert (seconds)</label><input type="number" id="respTimeAlertInput" class="form-control" value="5" style="font-size:13px;"></div>
+              <div class="form-check form-switch"><input id="emailAlertsInput" class="form-check-input" type="checkbox" checked><label class="form-check-label" style="font-size:13px;">Email alerts to admin team</label></div>
+            </div></div>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════ -->
+        <!--  NEW CARD: MariaDB HNSW Vector Index Configuration         -->
+        <!--  This card is NEW — it was not in the MySQL version.       -->
+        <!--  Maps to MariaDB 11.7+ native system variables.            -->
+        <!-- ════════════════════════════════════════════════════════════ -->
+        <div class="row g-4 mt-1">
+          <div class="col-xl-8">
+            <div class="rdr-card" style="border-color:rgba(23,162,184,0.3);">
+              <div class="card-header-custom" style="background:rgba(23,162,184,0.03);">
+                <h6><i class="bi bi-diagram-3-fill me-2" style="color:var(--rdr-teal)"></i>HNSW Vector Index Configuration <span class="hnsw-badge ms-2"><i class="bi bi-database-fill-gear"></i> MariaDB native</span></h6>
+                <span style="font-size:11px;color:var(--rdr-muted);">Auto-maintained on every INSERT/UPDATE/DELETE</span>
+              </div>
+              <div class="card-body-custom">
+                <div class="row">
+                  <div class="col-lg-7">
+                    <div class="mb-4">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div><div style="font-size:13px;font-weight:600;">mhnsw_default_m</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:1px;">Graph connectivity — higher = more accurate, slower insert</div></div>
+                        <span class="range-display" id="hnswMVal">6</span>
+                      </div>
+                      <input type="range" class="form-range" min="3" max="24" step="1" value="6" oninput="document.getElementById('hnswMVal').textContent=this.value">
+                      <div class="d-flex justify-content-between" style="font-size:10px;color:var(--rdr-muted);"><span>3 (Fast inserts)</span><span>24 (Max recall)</span></div>
+                    </div>
+
+                    <div class="mb-4">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div><div style="font-size:13px;font-weight:600;">mhnsw_ef_search</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:1px;">Search candidates examined — higher = better recall, slower query</div></div>
+                        <span class="range-display" id="hnswEfVal">20</span>
+                      </div>
+                      <input type="range" class="form-range" min="10" max="200" step="10" value="20" oninput="document.getElementById('hnswEfVal').textContent=this.value">
+                      <div class="d-flex justify-content-between" style="font-size:10px;color:var(--rdr-muted);"><span>10 (Fastest)</span><span>200 (Highest recall)</span></div>
+                    </div>
+
+                    <div class="mb-4">
+                      <label class="form-label" style="font-size:13px;font-weight:600;">mhnsw_max_cache_size <span style="font-size:11px;font-weight:400;color:var(--rdr-muted);">(MB)</span></label>
+                      <div style="font-size:11px;color:var(--rdr-muted);margin-bottom:6px;">Upper memory limit for HNSW index cache. Set to ~1.5&times; your vector data size.</div>
+                      <div class="input-group" style="max-width:220px;">
+                        <input type="number" class="form-control" value="512" style="font-size:13px;" id="hnswCacheVal">
+                        <span class="input-group-text" style="font-size:12px;">MB</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="form-label" style="font-size:13px;font-weight:600;">mhnsw_default_distance</label>
+                      <div style="font-size:11px;color:var(--rdr-muted);margin-bottom:6px;">Distance metric for VECTOR INDEX. Use <code>cosine</code> for text embeddings.</div>
+                      <select class="form-select" style="font-size:13px;max-width:220px;">
+                        <option selected>cosine</option>
+                        <option>euclidean</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-5">
+                    <div style="background:#F8FAFC;border:1px solid var(--rdr-border);border-radius:10px;padding:16px;margin-top:4px;">
+                      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);margin-bottom:12px;"><i class="bi bi-info-circle me-1"></i> Current Index Status</div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Index Type</div></div><div class="hnsw-param-value">HNSW</div></div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Distance Metric</div></div><div class="hnsw-param-value">Cosine</div></div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Indexed Vectors</div></div><div class="hnsw-param-value">8,412</div></div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Dimensions</div></div><div class="hnsw-param-value">1536</div></div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Est. Memory</div></div><div class="hnsw-param-value">~412 MB</div></div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Auto-Maintained</div></div><div class="hnsw-param-value" style="color:var(--rdr-green);">Yes <i class="bi bi-check-circle-fill"></i></div></div>
+                      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rdr-border);font-size:11px;color:var(--rdr-muted);">
+                        <i class="bi bi-lightning-charge-fill me-1" style="color:var(--rdr-teal);"></i>
+                        HNSW index updates automatically on every INSERT, UPDATE, and DELETE — no manual rebuild required.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-4">
+            <div class="rdr-card" style="border-color:rgba(23,162,184,0.3);">
+              <div class="card-header-custom" style="background:rgba(23,162,184,0.03);"><h6><i class="bi bi-journal-code me-2" style="color:var(--rdr-teal)"></i>Tuning Guide</h6></div>
+              <div class="card-body-custom" style="font-size:12px;color:var(--rdr-muted);line-height:1.7;">
+                <p><b style="color:var(--rdr-text);">M parameter:</b> Start with 6 for &lt;50K vectors. Increase to 12–16 for 200K+ vectors. Higher M increases insert time but improves search accuracy.</p>
+                <p><b style="color:var(--rdr-text);">ef_search:</b> Controls recall during queries. Default 20 is fine for most Q&A workloads. Increase to 100+ if you notice relevant chunks being missed.</p>
+                <p><b style="color:var(--rdr-text);">Cache size:</b> Rule of thumb: 1.5&times; your total vector data. For 8K chunks &times; 1536 dimensions &times; 4 bytes = ~47 MB raw, so 128–512 MB cache is ample.</p>
+                <p><b style="color:var(--rdr-text);">Distance metric:</b> Always use <code>cosine</code> for text embeddings from OpenAI, Cohere, or similar. <code>euclidean</code> is for normalized image vectors.</p>
+                <div style="background:rgba(23,162,184,0.06);border-radius:8px;padding:10px 12px;margin-top:8px;">
+                  <div style="font-size:11px;font-weight:600;color:var(--rdr-teal);margin-bottom:4px;"><i class="bi bi-terminal me-1"></i> CLI equivalent</div>
+                  <code style="font-size:11px;background:none;padding:0;color:var(--rdr-text);">SET GLOBAL mhnsw_default_m = 6;</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4"><button class="btn btn-outline-secondary" style="font-size:13px;">Reset to Defaults</button><button class="btn btn-rdr"><i class="bi bi-check-lg me-1"></i>Save All Settings</button></div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!--  TEST SANDBOX (UPDATED: MariaDB SQL + Show SQL toggle)    -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div class="page-content" id="page-sandbox">
+        <div class="row g-4">
+          <div class="col-xl-5">
+            <div class="rdr-card" style="height:100%;"><div class="card-header-custom"><h6><i class="bi bi-terminal-fill me-2" style="color:var(--rdr-teal)"></i>Test Query</h6></div>
+            <div class="card-body-custom d-flex flex-column">
+              <label class="form-label" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);">Enter a test question</label>
+              <textarea class="form-control mb-3" rows="3" id="sandboxQuery" placeholder="e.g., Can I add a car seat after I already booked my trip?" style="font-size:13px;"></textarea>
+              <div class="row g-2 mb-3">
+                <div class="col-6"><label style="font-size:11px;font-weight:600;color:var(--rdr-muted);">Category Filter</label><select class="form-select form-select-sm" style="font-size:12px;"><option>All Categories</option><option>Trip Extras</option><option>Protection Plans</option><option>Cancellation</option></select></div>
+                <div class="col-6"><label style="font-size:11px;font-weight:600;color:var(--rdr-muted);">Top-K Override</label><input type="number" class="form-control form-control-sm" value="5" style="font-size:12px;"></div>
+              </div>
+              <button class="btn btn-rdr w-100 mb-4" onclick="runSandboxQuery()"><i class="bi bi-play-fill me-1"></i>Run Test Query</button>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label mb-0" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);">Retrieved Chunks</label>
+              </div>
+              <div class="sandbox-output flex-grow-1" id="sandboxChunks"><div style="text-align:center;color:var(--rdr-muted);padding:30px 0;font-size:13px;"><i class="bi bi-inbox d-block" style="font-size:28px;margin-bottom:8px;"></i>Run a query to see retrieved chunks</div></div>
+            </div></div>
+          </div>
+          <div class="col-xl-7">
+            <div class="rdr-card" style="height:100%;"><div class="card-header-custom">
+              <h6><i class="bi bi-chat-dots-fill me-2" style="color:var(--rdr-teal)"></i>Generated Answer Preview</h6>
+              <!-- Show SQL toggle — NEW for MariaDB -->
+              <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="showSqlToggle" onchange="toggleSqlPreview()"><label class="form-check-label" for="showSqlToggle" style="font-size:12px;font-weight:600;color:var(--rdr-muted);">Show SQL</label></div>
+            </div>
+            <div class="card-body-custom d-flex flex-column">
+              <div class="flex-grow-1" id="sandboxChat" style="min-height:260px;">
+                <div style="text-align:center;color:var(--rdr-muted);padding:60px 0;font-size:13px;"><i class="bi bi-chat-square-dots d-block" style="font-size:36px;margin-bottom:12px;"></i>The AI-generated answer will appear here<br><span style="font-size:12px;">Run a test query from the panel on the left</span></div>
+              </div>
+              <!-- MariaDB SQL Preview Panel -->
+              <div class="sql-preview" id="sqlPreview">
+                <span class="sql-cm">-- MariaDB 11.7+ native vector search</span><br>
+                <span class="sql-kw">SET</span> @q = <span class="sql-fn">VEC_FromText</span>(<span class="sql-str">'[0.91,0.84,0.14,...]'</span>);<br><br>
+                <span class="sql-kw">SELECT</span><br>
+                &nbsp;&nbsp;ce.chunk_id,<br>
+                &nbsp;&nbsp;d.title,<br>
+                &nbsp;&nbsp;ce.section_title,<br>
+                &nbsp;&nbsp;<span class="sql-fn">ROUND</span>(1 - <span class="sql-fn">VEC_DISTANCE_COSINE</span>(<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;ce.embedding, @q<br>
+                &nbsp;&nbsp;), 4) <span class="sql-kw">AS</span> similarity<br>
+                <span class="sql-kw">FROM</span> kb_chunk_embeddings ce<br>
+                <span class="sql-kw">JOIN</span> kb_documents d <span class="sql-kw">ON</span> d.document_id = ce.document_id<br>
+                <span class="sql-kw">JOIN</span> kb_categories cat <span class="sql-kw">ON</span> cat.category_id = d.category_id<br>
+                <span class="sql-kw">WHERE</span> ce.is_active = 1 <span class="sql-kw">AND</span> d.status = <span class="sql-str">'active'</span><br>
+                <span class="sql-kw">ORDER BY</span> <span class="sql-fn">VEC_DISTANCE_COSINE</span>(ce.embedding, @q) <span class="sql-kw">ASC</span><br>
+                <span class="sql-kw">LIMIT</span> 5;<br>
+                <br><span class="sql-cm">-- VECTOR INDEX (HNSW, DISTANCE=cosine) auto-used</span>
+              </div>
+              <div class="mt-3 pt-3" style="border-top:1px solid var(--rdr-border);" id="sandboxMeta" hidden>
+                <div class="row g-2" style="font-size:12px;">
+                  <div class="col-3 text-center"><div style="color:var(--rdr-muted);">Confidence</div><div style="font-family:'JetBrains Mono';font-size:16px;font-weight:700;color:var(--rdr-green);" id="sandboxConf">&mdash;</div></div>
+                  <div class="col-3 text-center"><div style="color:var(--rdr-muted);">Response Time</div><div style="font-family:'JetBrains Mono';font-size:16px;font-weight:700;color:var(--rdr-teal);" id="sandboxTime">&mdash;</div></div>
+                  <div class="col-3 text-center"><div style="color:var(--rdr-muted);">Chunks Used</div><div style="font-family:'JetBrains Mono';font-size:16px;font-weight:700;color:var(--rdr-blue);" id="sandboxChunkCount">&mdash;</div></div>
+                  <div class="col-3 text-center"><div style="color:var(--rdr-muted);">Classification</div><div style="font-family:'JetBrains Mono';font-size:16px;font-weight:700;color:var(--rdr-orange);" id="sandboxClass">&mdash;</div></div>
+                </div>
+              </div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-wrapper -->
+
+  <!-- Category Modal -->
+  <div class="modal fade" id="categoryModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="border-radius:12px;">
+    <div class="modal-header" style="border-bottom:1px solid var(--rdr-border);padding:18px 22px;"><h6 class="modal-title" style="font-weight:700;">Add New Category</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" style="padding:22px;">
+      <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Category Name</label><input type="text" class="form-control" placeholder="e.g., Insurance Policies" style="font-size:13px;"></div>
+      <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Priority Boost</label><input type="number" class="form-control" value="0.00" step="0.01" min="0" max="0.50" style="font-size:13px;"></div>
+      <div><label class="form-label" style="font-size:13px;font-weight:600;">Description</label><textarea class="form-control" rows="2" placeholder="Brief description..." style="font-size:13px;"></textarea></div>
+    </div>
+    <div class="modal-footer" style="border-top:1px solid var(--rdr-border);padding:14px 22px;"><button class="btn btn-outline-secondary" data-bs-dismiss="modal" style="font-size:13px;">Cancel</button><button class="btn btn-rdr" data-bs-dismiss="modal">Create Category</button></div>
+  </div></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+// --- GLOBAL STATE ---
+let ticketsData = [];
+let currentTicketId = null;
+let supportSessionId = null;
+let supportWs = null;
+let isSupportTakeoverActive = false;
+
+// --- PAGE SWITCHING & NAVIGATION ---
+function switchPage(page, el) {
+    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
+    if (el) el.classList.add('active');
+    
+    const titles = { 
+        dashboard: 'Dashboard', 
+        support: 'Live Support Queue', 
+        tickets: 'Support Tickets Queue', 
+        documents: 'Knowledge Base Documents', 
+        upload: 'Upload Document', 
+        categories: 'Categories & Tags', 
+        analytics: 'AI Performance Analytics', 
+        unanswered: 'Unanswered Queries', 
+        prompt: 'Prompt Template', 
+        settings: 'System Settings', 
+        sandbox: 'Test Query Sandbox' 
+    };
+    document.getElementById('pageTitle').textContent = titles[page] || 'Dashboard';
+    document.getElementById('sidebar').classList.remove('show');
+    
+    // Clear any active support queue polling intervals
+    if (window.supportQueueInterval) {
+        clearInterval(window.supportQueueInterval);
+        window.supportQueueInterval = null;
+    }
+    
+    if (page === 'dashboard') {
+        loadDashboardStats();
+    } else if (page === 'tickets') {
+        loadTickets();
+    } else if (page === 'support') {
+        loadSupportQueue();
+        window.supportQueueInterval = setInterval(loadSupportQueue, 5000);
+    } else if (page === 'unanswered') {
+        loadUnansweredQueries();
+    } else if (page === 'analytics') {
+        loadAnalyticsPage();
+    }
+}
+
+// --- DASHBOARD DATA LOADING ---
+async function loadDashboardStats() {
+    try {
+        const res = await fetch('http://localhost:8085/api/analytics/overview');
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById('dashboardTotalQueries').textContent = data.total_queries.toLocaleString();
+            document.getElementById('dashboardAvgConfidence').textContent = data.avg_confidence;
+            document.getElementById('dashboardEscalationRate').textContent = data.escalation_rate + '%';
+            document.getElementById('dashboardAvgResponseTime').textContent = data.avg_response_time + 's';
+            document.getElementById('dashboardActiveDocs').textContent = data.active_docs;
+            document.getElementById('dashboardSatisfaction').innerHTML = `${data.avg_satisfaction}<span style="font-size:14px;color:var(--rdr-muted);">/5</span>`;
+            document.getElementById('dashboardUnansweredQueries').textContent = data.unanswered_count;
+            document.getElementById('dashboardVectorChunks').textContent = data.vector_chunks.toLocaleString();
+        }
+        
+        // Load unanswered list (top 5)
+        const unres = await fetch('http://localhost:8085/api/analytics/unanswered');
+        if (unres.ok) {
+            const queries = await unres.json();
+            const listEl = document.getElementById('dashboardUnansweredList');
+            if (listEl) {
+                listEl.innerHTML = '';
+                queries.slice(0, 5).forEach((q, idx) => {
+                    const item = document.createElement('div');
+                    item.className = 'unanswered-item';
+                    item.innerHTML = `
+                        <div class="unanswered-rank">${idx + 1}</div>
+                        <div style="flex:1;font-size:13px">&ldquo;${q.query}&rdquo;</div>
+                        <div style="font-size:12px;font-weight:600;color:var(--rdr-muted);font-family:'JetBrains Mono',monospace;">${q.times_asked}x</div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            }
+        }
+        
+        // Load chart volume
+        const chartRes = await fetch('http://localhost:8085/api/analytics/chart');
+        if (chartRes.ok) {
+            const chartDataObj = await chartRes.json();
+            const chartData = chartDataObj.data;
+            const labels = chartDataObj.labels;
+            const maxVal = Math.max(...chartData, 1);
+            
+            const chartEl = document.getElementById('queryChart');
+            if (chartEl) {
+                chartEl.innerHTML = '';
+                chartData.forEach((val, i) => {
+                    const col = document.createElement('div');
+                    col.className = 'bar-col';
+                    const bar = document.createElement('div');
+                    bar.className = 'bar';
+                    bar.style.height = '0%';
+                    setTimeout(() => {
+                        bar.style.height = (val / maxVal * 100) + '%';
+                    }, 100 + i * 40);
+                    const lbl = document.createElement('div');
+                    lbl.className = 'bar-label';
+                    lbl.textContent = labels[i];
+                    col.appendChild(bar);
+                    col.appendChild(lbl);
+                    chartEl.appendChild(col);
+                });
+            }
+        }
+    } catch(err) {
+        console.error('Error loading dashboard stats', err);
+    }
+}
+
+// --- ANALYTICS PAGE ---
+async function loadAnalyticsPage() {
+    try {
+        const res = await fetch('http://localhost:8085/api/analytics/overview');
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById('statQueriesTotal').textContent = data.total_queries.toLocaleString();
+            document.getElementById('statQueriesAnswered').textContent = data.answered_rate + '%';
+            const escalatedCount = Math.round(data.total_queries * (data.escalation_rate / 100));
+            document.getElementById('statQueriesEscalated').textContent = escalatedCount.toLocaleString();
+            document.getElementById('statQueriesSatisfaction').textContent = data.avg_satisfaction;
+        }
+    } catch(err) {
+        console.error('Error loading analytics page', err);
+    }
+}
+
+// --- UNANSWERED QUERIES ---
+async function loadUnansweredQueries() {
+    try {
+        const res = await fetch('http://localhost:8085/api/analytics/unanswered');
+        if (res.ok) {
+            const queries = await res.json();
+            const tbody = document.getElementById('unansweredTableBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                queries.forEach((q, idx) => {
+                    const tr = document.createElement('tr');
+                    
+                    let actionBadge = 'badge-medium';
+                    let actionText = 'Expand KB Document';
+                    let btnText = 'Edit Doc';
+                    
+                    if (q.confidence < 0.40) {
+                        actionBadge = 'badge-high';
+                        actionText = 'Create KB Document';
+                        btnText = 'Create Doc';
+                    }
+                    
+                    tr.innerHTML = `
+                        <td>${idx + 1}</td>
+                        <td>&ldquo;${q.query}&rdquo;</td>
+                        <td><b>${q.times_asked}</b></td>
+                        <td><span style="color:var(--rdr-red);">${q.confidence}</span></td>
+                        <td><span class="badge-status ${actionBadge}">${actionText}</span></td>
+                        <td style="text-align:right;">
+                            <button class="btn btn-sm btn-outline-rdr" onclick="switchToUploadPage('${q.query.replace(/'/g, "\\'")}')">${btnText}</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+    } catch(err) {
+        console.error('Error loading unanswered queries', err);
+    }
+}
+
+function switchToUploadPage(queryText) {
+    switchPage('upload', document.querySelector('[data-page=upload]'));
+    document.getElementById('kbUploadTitle').value = queryText;
+    document.getElementById('kbUploadVersion').value = '1.0';
+    document.getElementById('kbUploadCategory').value = 'General FAQ';
+}
+
+// --- LIVE SUPPORT QUEUE ---
+async function loadSupportQueue() {
+    try {
+        const response = await fetch('http://localhost:8085/api/support/sessions');
+        if (response.ok) {
+            const sessions = await response.json();
+            const queueEl = document.getElementById('supportQueueList');
+            if (!queueEl) return;
+            
+            queueEl.innerHTML = '';
+            if (sessions.length === 0) {
+                queueEl.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:12px;">No active sessions in queue.</div>';
+                return;
+            }
+            
+            sessions.forEach(sess => {
+                const item = document.createElement('div');
+                item.id = 'ssession-' + sess.session_id;
+                item.className = 'p-3 border-bottom support-session-item';
+                if (sess.session_id === supportSessionId) {
+                    item.className += ' active';
+                }
+                item.style.cursor = 'pointer';
+                item.style.transition = 'background 0.2s';
+                
+                let stateBadge = '';
+                let borderLeft = '';
+                let bg = 'transparent';
+                
+                if (sess.status === 'pending_human') {
+                    stateBadge = '<span class="badge bg-danger ms-1" style="font-size:9px;">Escalated</span>';
+                    borderLeft = '3px solid var(--rdr-red)';
+                    bg = 'rgba(220,53,69,0.05)';
+                } else if (sess.status === 'human_active') {
+                    stateBadge = '<span class="badge bg-success ms-1" style="font-size:9px;">Active</span>';
+                    borderLeft = '3px solid var(--rdr-green)';
+                }
+                
+                item.style.borderLeft = borderLeft;
+                item.style.background = bg;
+                
+                item.onclick = () => selectSupportSession(sess.session_id);
+                item.onmouseover = () => { if(!item.classList.contains('active')) item.style.background = '#F8FAFC'; };
+                item.onmouseout = () => { if(!item.classList.contains('active')) item.style.background = bg; };
+                
+                let timeStr = 'N/A';
+                if (sess.started_at) {
+                    const date = new Date(sess.started_at);
+                    timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+                
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span style="font-size:13px;font-weight:600;">${sess.member_name || 'Guest'} #${sess.session_id.substring(0,6)} ${stateBadge}</span>
+                        <span style="font-size:11px;color:var(--rdr-muted);">${timeStr}</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--rdr-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sess.last_message || 'No messages yet'}</div>
+                `;
+                queueEl.appendChild(item);
+            });
+            
+            if (sessions.length > 0 && !supportSessionId) {
+                selectSupportSession(sessions[0].session_id);
+            }
+        }
+    } catch(err) {
+        console.error('Error loading support queue', err);
+    }
+}
+
+async function selectSupportSession(sessionId) {
+    supportSessionId = sessionId;
+    document.getElementById('wsSessionInput').value = sessionId;
+    document.getElementById('activeSupportHeader').innerHTML = `<i class="bi bi-chat-text-fill me-2" style="color:var(--rdr-blue)"></i>Active Chat: Session #${sessionId}`;
+    
+    document.querySelectorAll('.support-session-item').forEach(el => {
+        el.classList.remove('active');
+        el.style.background = 'transparent';
+    });
+    const activeItem = document.getElementById('ssession-' + sessionId);
+    if (activeItem) {
+        activeItem.classList.add('active');
+    }
+    
+    try {
+        const res = await fetch(`http://localhost:8085/chat/history?session_id=${sessionId}`);
+        if (res.ok) {
+            const history = await res.json();
+            const chatArea = document.getElementById('supportChatArea');
+            chatArea.innerHTML = `<div class="text-center mb-3"><span class="badge bg-secondary" style="font-size:10px;">Chat Connected</span></div>`;
+            
+            history.forEach(msg => {
+                const bubble = document.createElement('div');
+                bubble.className = 'chat-bubble';
+                
+                if (msg.role === 'user') {
+                    bubble.className += ' user';
+                    bubble.style.background = '#E2E8F0';
+                    bubble.style.color = '#1E293B';
+                    bubble.style.marginLeft = 'auto';
+                    bubble.style.borderBottomRightRadius = '4px';
+                } else if (msg.role === 'admin') {
+                    bubble.className += ' ai';
+                    bubble.style.background = 'rgba(23,162,184,0.08)';
+                    bubble.style.color = 'var(--rdr-text)';
+                    bubble.style.borderBottomLeftRadius = '4px';
+                    bubble.style.borderLeft = '3px solid var(--rdr-teal)';
+                } else {
+                    bubble.className += ' ai';
+                    bubble.style.background = '#F1F5F9';
+                    bubble.style.color = 'var(--rdr-text)';
+                    bubble.style.borderBottomLeftRadius = '4px';
+                }
+                bubble.innerText = msg.content;
+                chatArea.appendChild(bubble);
+            });
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+    } catch(err) {
+        console.error('Error fetching chat history', err);
+    }
+    
+    if (supportWs) {
+        supportWs.close();
+    }
+    
+    isSupportTakeoverActive = false;
+    const takeoverBtn = document.getElementById('takeoverBtn');
+    takeoverBtn.innerHTML = `<i class="bi bi-telephone-inbound-fill me-1"></i> Accept Takeover`;
+    takeoverBtn.className = "btn btn-sm btn-rdr";
+    
+    document.getElementById('supportMessageInput').disabled = true;
+    document.getElementById('supportSendBtn').disabled = true;
+    document.getElementById('supportConnectionStatus').innerText = "Disconnected";
+    document.getElementById('supportConnectionStatus').className = "badge bg-secondary";
+    document.getElementById('supportStatusHelp').innerText = 'Click "Accept Takeover" to bridge your connection and reply.';
+}
+
+function toggleTakeover() {
+    const wsUri = document.getElementById('wsUriInput').value.trim();
+    const sessionId = document.getElementById('wsSessionInput').value.trim();
+    
+    if (!isSupportTakeoverActive) {
+        if (!wsUri || !sessionId) {
+            alert("Please specify a valid WebSocket URI and Session ID.");
+            return;
+        }
+        
+        document.getElementById('supportConnectionStatus').innerText = "Connecting...";
+        document.getElementById('supportConnectionStatus').className = "badge bg-warning text-dark";
+        
+        fetch(`http://localhost:8085/api/support/sessions/${sessionId}/takeover`, { method: 'POST' })
+            .then(() => {
+                supportWs = new WebSocket(`${wsUri}?session_id=${sessionId}`);
+                
+                supportWs.onopen = () => {
+                    isSupportTakeoverActive = true;
+                    document.getElementById('supportConnectionStatus').innerText = "Connected";
+                    document.getElementById('supportConnectionStatus').className = "badge bg-success";
+                    
+                    document.getElementById('supportMessageInput').disabled = false;
+                    document.getElementById('supportSendBtn').disabled = false;
+                    
+                    const takeoverBtn = document.getElementById('takeoverBtn');
+                    takeoverBtn.innerHTML = `<i class="bi bi-telephone-x-fill me-1"></i> Release Takeover`;
+                    takeoverBtn.className = "btn btn-sm btn-danger";
+                    
+                    document.getElementById('supportStatusHelp').innerText = "WebSocket session taken over. AI assistant is currently bypassed.";
+                    
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'text-center my-2';
+                    msgDiv.innerHTML = `<span class="badge bg-success" style="font-size:10px;">WebSocket Takeover Active</span>`;
+                    document.getElementById('supportChatArea').appendChild(msgDiv);
+                    document.getElementById('supportChatArea').scrollTop = document.getElementById('supportChatArea').scrollHeight;
+                };
+                
+                supportWs.onmessage = (event) => {
+                    let sender = 'user';
+                    let content = event.data;
+                    try {
+                        const parsed = JSON.parse(event.data);
+                        if (parsed.role) {
+                            sender = parsed.role;
+                            content = parsed.content;
+                        }
+                    } catch(e) {}
+                    
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'chat-bubble';
+                    if (sender === 'user') {
+                        msgDiv.className += ' user';
+                        msgDiv.style.background = '#E2E8F0';
+                        msgDiv.style.color = '#1E293B';
+                        msgDiv.style.marginLeft = 'auto';
+                        msgDiv.style.borderBottomRightRadius = '4px';
+                    } else {
+                        msgDiv.className += ' ai';
+                        msgDiv.style.background = '#F1F5F9';
+                        msgDiv.style.color = 'var(--rdr-text)';
+                        msgDiv.style.borderBottomLeftRadius = '4px';
+                    }
+                    msgDiv.innerText = content;
+                    document.getElementById('supportChatArea').appendChild(msgDiv);
+                    document.getElementById('supportChatArea').scrollTop = document.getElementById('supportChatArea').scrollHeight;
+                };
+                
+                supportWs.onerror = () => {
+                    alert("WebSocket connection failed. Verify port 8085 and session connection.");
+                    isSupportTakeoverActive = false;
+                    document.getElementById('supportConnectionStatus').innerText = "Error";
+                    document.getElementById('supportConnectionStatus').className = "badge bg-danger";
+                };
+                
+                supportWs.onclose = () => {
+                    isSupportTakeoverActive = false;
+                    document.getElementById('supportConnectionStatus').innerText = "Disconnected";
+                    document.getElementById('supportConnectionStatus').className = "badge bg-secondary";
+                    
+                    document.getElementById('supportMessageInput').disabled = true;
+                    document.getElementById('supportSendBtn').disabled = true;
+                    
+                    const takeoverBtn = document.getElementById('takeoverBtn');
+                    takeoverBtn.innerHTML = `<i class="bi bi-telephone-inbound-fill me-1"></i> Accept Takeover`;
+                    takeoverBtn.className = "btn btn-sm btn-rdr";
+                    
+                    document.getElementById('supportStatusHelp').innerText = 'WebSocket closed. Control reverted back to AI.';
+                };
+            })
+            .catch(err => {
+                alert("Failed to alert backend of takeover: " + err);
+            });
+    } else {
+        if (supportWs) {
+            supportWs.close();
+        }
+        fetch(`http://localhost:8085/api/support/sessions/${sessionId}/release`, { method: 'POST' });
+    }
+}
+
+function sendSupportLiveMessage() {
+    const input = document.getElementById('supportMessageInput');
+    const val = input.value.trim();
+    if (!val || !supportWs || supportWs.readyState !== WebSocket.OPEN) return;
+    
+    supportWs.send(val);
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-bubble ai';
+    msgDiv.style.background = 'rgba(23,162,184,0.08)';
+    msgDiv.style.color = 'var(--rdr-text)';
+    msgDiv.style.borderBottomLeftRadius = '4px';
+    msgDiv.style.borderLeft = '3px solid var(--rdr-teal)';
+    msgDiv.innerText = val;
+    document.getElementById('supportChatArea').appendChild(msgDiv);
+    document.getElementById('supportChatArea').scrollTop = document.getElementById('supportChatArea').scrollHeight;
+    
+    input.value = "";
+}
+
+// --- SUPPORT TICKETS ---
+async function loadTickets() {
+    try {
+        const catFilter = document.getElementById('ticketCategoryFilter').value;
+        const priFilter = document.getElementById('ticketPriorityFilter').value;
+        const statFilter = document.getElementById('ticketStatusFilter').value;
+        const searchVal = document.getElementById('ticketSearchInput').value.trim();
+        
+        let url = 'http://localhost:8085/api/tickets?';
+        if (catFilter) url += `category=${encodeURIComponent(catFilter)}&`;
+        if (priFilter) url += `priority=${encodeURIComponent(priFilter)}&`;
+        if (statFilter) url += `status=${encodeURIComponent(statFilter)}&`;
+        if (searchVal) url += `search=${encodeURIComponent(searchVal)}&`;
+        
+        const response = await fetch(url);
+        if (response.ok) {
+            ticketsData = await response.json();
+            
+            let total = ticketsData.length;
+            let open = ticketsData.filter(t => t.status.toLowerCase() === 'open').length;
+            let inProgress = ticketsData.filter(t => t.status.toLowerCase() === 'in progress' || t.status.toLowerCase() === 'in-progress').length;
+            let resolved = ticketsData.filter(t => t.status.toLowerCase() === 'resolved' || t.status.toLowerCase() === 'completed' || t.status.toLowerCase() === 'closed').length;
+            
+            document.getElementById('statTotalTickets').textContent = total;
+            document.getElementById('statOpenTickets').textContent = open;
+            document.getElementById('statProgressTickets').textContent = inProgress;
+            document.getElementById('statResolvedTickets').textContent = resolved;
+            
+            renderTicketsList();
+            
+            if (ticketsData.length > 0) {
+                const exists = ticketsData.some(t => t.id === currentTicketId);
+                if (exists) {
+                    selectTicket(currentTicketId);
+                } else {
+                    selectTicket(ticketsData[0].id);
+                }
+            } else {
+                document.getElementById('ticketDetailPanel').style.setProperty('display', 'none', 'important');
+                document.getElementById('ticketPlaceholder').style.setProperty('display', 'flex', 'important');
+            }
+        }
+    } catch(err) {
+        console.error('Error loading tickets', err);
+    }
+}
+
+function renderTicketsList() {
+    const sidebar = document.getElementById('ticketsListSidebar');
+    if (!sidebar) return;
+    
+    sidebar.innerHTML = '';
+    if (ticketsData.length === 0) {
+        sidebar.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:12px;">No tickets found.</div>';
+        return;
+    }
+    
+    ticketsData.forEach(tkt => {
+        const item = document.createElement('div');
+        item.id = 'tcard-' + tkt.id;
+        item.className = 'p-3 border-bottom ticket-card-item';
+        if (tkt.id === currentTicketId) {
+            item.className += ' active';
+            item.style.background = 'rgba(23,162,184,0.05)';
+        }
+        item.style.cursor = 'pointer';
+        item.style.transition = 'background 0.2s';
+        
+        let priorityBadge = '';
+        if (tkt.priority === 'Urgent') priorityBadge = '<span class="badge-status badge-high ms-2">Urgent</span>';
+        else if (tkt.priority === 'High') priorityBadge = '<span class="badge-status badge-medium ms-2">High</span>';
+        
+        let statusClass = 'badge-active';
+        if (tkt.status === 'Open') statusClass = 'badge-high';
+        if (tkt.status === 'In Progress') statusClass = 'badge-processing';
+        if (tkt.status === 'Resolved' || tkt.status === 'Closed') statusClass = 'badge-active';
+        
+        item.onclick = () => selectTicket(tkt.id);
+        item.onmouseover = () => { if(!item.classList.contains('active')) item.style.background = '#F8FAFC'; };
+        item.onmouseout = () => { if(!item.classList.contains('active')) item.style.background = 'transparent'; };
+        
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span style="font-size:12.5px;font-weight:600;">#${tkt.id}</span>
+                <span class="badge-status ${statusClass}" style="font-size:9.5px;">${tkt.status}</span>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--rdr-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tkt.subject}</div>
+            <div class="d-flex justify-content-between align-items-center mt-2" style="font-size:11.5px;color:var(--rdr-muted);">
+                <span>${tkt.customer} ${priorityBadge}</span>
+                <span>${tkt.date}</span>
+            </div>
+        `;
+        sidebar.appendChild(item);
+    });
+}
+
+function selectTicket(ticketId) {
+    currentTicketId = ticketId;
+    
+    document.querySelectorAll('.ticket-card-item').forEach(el => {
+        el.classList.remove('active');
+        el.style.background = 'transparent';
+    });
+    const selectedCard = document.getElementById('tcard-' + ticketId);
+    if (selectedCard) {
+        selectedCard.classList.add('active');
+        selectedCard.style.background = 'rgba(23,162,184,0.05)';
+    }
+    
+    const tkt = ticketsData.find(t => t.id === ticketId);
+    if (!tkt) return;
+    
+    document.getElementById('ticketPlaceholder').style.setProperty('display', 'none', 'important');
+    document.getElementById('ticketDetailPanel').style.setProperty('display', 'flex', 'important');
+    
+    document.getElementById('detailTicketTitle').textContent = `Ticket #${tkt.id}`;
+    document.getElementById('detailTicketSubject').textContent = tkt.subject;
+    
+    const categoryBadge = document.getElementById('detailCategoryBadge');
+    if (categoryBadge) categoryBadge.textContent = tkt.category;
+    
+    document.getElementById('detailCustomerName').textContent = tkt.customer;
+    document.getElementById('detailCustomerEmail').textContent = tkt.email;
+    document.getElementById('detailTicketDate').textContent = tkt.date;
+    document.getElementById('detailMessageContent').textContent = tkt.message;
+    
+    document.getElementById('detailStatusSelect').value = tkt.status === 'Resolved' ? 'Resolved' : tkt.status;
+    document.getElementById('detailPrioritySelect').value = tkt.priority;
+    document.getElementById('detailReplyTextarea').value = '';
+    
+    const threadEl = document.getElementById('detailChatThread');
+    threadEl.innerHTML = `
+        <div class="mb-2">
+            <div class="d-flex justify-content-between mb-1" style="font-size:11px;">
+                <strong class="text-danger">${tkt.customer} (User)</strong>
+                <span class="text-muted">${tkt.date}</span>
+            </div>
+            <div style="font-size:12.5px; background:rgba(220,53,69,0.04); color:var(--rdr-text); padding:8px 12px; border-radius:6px; display:inline-block; max-width:85%;">${tkt.message}</div>
+        </div>
+    `;
+    
+    tkt.replies.forEach(r => {
+        const aligns = r.sender_role === 'Agent' ? 'align-self-end text-end' : '';
+        const senderColor = r.sender_role === 'Agent' ? 'color:var(--rdr-teal)' : 'color:var(--rdr-red)';
+        const bg = r.sender_role === 'Agent' ? 'background:rgba(23,162,184,0.08)' : 'background:rgba(220,53,69,0.04)';
+        
+        threadEl.innerHTML += `
+            <div class="mb-2 ${aligns}" style="width: 100%;">
+                <div class="d-flex justify-content-between mb-1" style="font-size:11px;">
+                    <span class="text-muted">${r.time}</span>
+                    <strong style="${senderColor}">${r.sender_name} (${r.sender_role})</strong>
+                </div>
+                <div style="font-size:12.5px; ${bg}; color:var(--rdr-text); padding:8px 12px; border-radius:6px; text-align:left; display:inline-block; max-width:85%;">${r.text}</div>
+            </div>
+        `;
+    });
+    
+    threadEl.scrollTop = threadEl.scrollHeight;
+}
+
+async function submitDetailTicketReply() {
+    const text = document.getElementById('detailReplyTextarea').value.trim();
+    if (!text) { alert('Please enter a response.'); return; }
+    
+    try {
+        const res = await fetch(`http://localhost:8085/api/tickets/${currentTicketId}/reply`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: text })
+        });
+        if (res.ok) {
+            document.getElementById('detailReplyTextarea').value = '';
+            await loadTickets();
+        } else {
+            alert('Failed to submit reply.');
+        }
+    } catch(err) {
+        console.error(err);
+    }
+}
+
+async function updateDetailTicketStatus() {
+    if (!currentTicketId) return;
+    const status = document.getElementById('detailStatusSelect').value;
+    try {
+        const res = await fetch(`http://localhost:8085/api/tickets/${currentTicketId}/status`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: status })
+        });
+        if (res.ok) {
+            await loadTickets();
+        } else {
+            alert('Failed to update status.');
+        }
+    } catch(err) {
+        console.error(err);
+    }
+}
+
+async function updateDetailTicketPriority() {
+    if (!currentTicketId) return;
+    const priority = document.getElementById('detailPrioritySelect').value;
+    try {
+        const res = await fetch(`http://localhost:8085/api/tickets/${currentTicketId}/priority`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ priority: priority })
+        });
+        if (res.ok) {
+            await loadTickets();
+        } else {
+            alert('Failed to update priority.');
+        }
+    } catch(err) {
+        console.error(err);
+    }
+}
+
+function openCreateTicketMock() {
+    document.getElementById('newTicketSubject').value = '';
+    document.getElementById('newTicketMessage').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('createTicketModal'));
+    modal.show();
+}
+
+async function submitCreateTicketMock() {
+    const customer = document.getElementById('newTicketCustomer').value.trim();
+    const email = document.getElementById('newTicketEmail').value.trim();
+    const subject = document.getElementById('newTicketSubject').value.trim();
+    const category = document.getElementById('newTicketCategory').value;
+    const priority = document.getElementById('newTicketPriority').value;
+    const message = document.getElementById('newTicketMessage').value.trim();
+
+    if (!subject || !message || !email) { alert('Please enter email, subject and message.'); return; }
+
+    try {
+        const res = await fetch('http://localhost:8085/api/tickets', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                customer_name: customer,
+                customer_email: email,
+                subject: subject,
+                category: category,
+                priority: priority,
+                description: message
+            })
+        });
+        if (res.ok) {
+            const json = await res.json();
+            const ticketId = json.ticket_id;
+            
+            const modalEl = document.getElementById('createTicketModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            
+            alert(`Ticket #${ticketId} created successfully!`);
+            await loadTickets();
+            selectTicket(ticketId);
+        } else {
+            alert('Failed to create ticket.');
+        }
+    } catch(err) {
+        console.error(err);
+    }
+}
+
+// --- SANDBOX TEST SEARCH ---
+async function runSandboxQuery() {
+    const q = document.getElementById('sandboxQuery').value.trim();
+    if (!q) { alert('Please enter a test question.'); return; }
+    
+    const chatEl = document.getElementById('sandboxChat');
+    const chunksEl = document.getElementById('sandboxChunks');
+    const metaEl = document.getElementById('sandboxMeta');
+    
+    chatEl.innerHTML = `
+        <div class="chat-bubble user">${q}</div>
+        <div class="d-flex align-items-center gap-2 mb-3" style="color:var(--rdr-muted);font-size:12px;">
+            <div class="spinner-border spinner-border-sm" role="status" style="width:14px;height:14px;border-width:2px;color:var(--rdr-teal);"></div>
+            VEC_DISTANCE_COSINE + HNSW searching...
+        </div>
+    `;
+    
+    try {
+        const res = await fetch('http://localhost:8085/api/sandbox', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ query: q })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'success') {
+                chatEl.innerHTML = `
+                    <div class="chat-bubble user">${q}</div>
+                    <div class="chat-bubble ai">${data.answer}</div>
+                `;
+                
+                chunksEl.innerHTML = '';
+                data.chunks.forEach(chunk => {
+                    const card = document.createElement('div');
+                    card.className = 'chunk-card';
+                    card.innerHTML = `
+                        <div class="d-flex justify-content-between mb-1">
+                            <span style="font-size:11px;font-weight:600;color:var(--rdr-teal);">Chunk #${chunk.chunk_index} — ${chunk.document_title}</span>
+                            <span class="chunk-score" style="color:var(--rdr-green);">cos_dist: ${chunk.distance}</span>
+                        </div>
+                        <div style="font-size:12px;color:var(--rdr-muted);line-height:1.6;">"${chunk.text}"</div>
+                    `;
+                    chunksEl.appendChild(card);
+                });
+                
+                metaEl.hidden = false;
+                document.getElementById('sandboxConf').textContent = data.confidence;
+                document.getElementById('sandboxTime').textContent = data.response_time_s + 's';
+                document.getElementById('sandboxChunkCount').textContent = data.chunks.length + ' / 5';
+                document.getElementById('sandboxClass').textContent = data.intent;
+            } else {
+                chatEl.innerHTML = `<div class="chat-bubble user">${q}</div><div class="chat-bubble ai text-danger">Error: ${data.message}</div>`;
+            }
+        } else {
+            chatEl.innerHTML = `<div class="chat-bubble user">${q}</div><div class="chat-bubble ai text-danger">Failed to run sandbox query. Check backend.</div>`;
+        }
+    } catch(err) {
+        console.error(err);
+        chatEl.innerHTML = `<div class="chat-bubble user">${q}</div><div class="chat-bubble ai text-danger">Connection error.</div>`;
+    }
+}
+
+// --- FILE DRAG & DROP HANDLERS ---
+function handleDragOver(e){e.preventDefault();e.currentTarget.classList.add('dragover');}
+function handleDragLeave(e){e.currentTarget.classList.remove('dragover');}
+function handleDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(e.dataTransfer.files.length)showFile(e.dataTransfer.files[0]);}
+function handleFileSelect(input){if(input.files.length)showFile(input.files[0]);}
+function showFile(file){document.getElementById('fileName').textContent=file.name;document.getElementById('fileSize').textContent=(file.size/1024/1024).toFixed(2)+' MB';document.getElementById('filePreview').style.display='block';document.getElementById('uploadZone').style.display='none';}
+function clearFile(){document.getElementById('filePreview').style.display='none';document.getElementById('uploadZone').style.display='block';document.getElementById('fileInput').value='';}
+function toggleSqlPreview(){document.getElementById('sqlPreview').style.display=document.getElementById('showSqlToggle').checked?'block':'none';}
+
+// --- SYSTEM CONFIG (Dynamic AI config loading) ---
+async function loadAiConfig() {
+    try {
+        const res = await fetch('http://localhost:8085/config/ai');
+        if (res.ok) {
+            const json = await res.json();
+            if (json.status === 'success') {
+                const data = json.data;
+                if(document.getElementById('sysPromptInput')) document.getElementById('sysPromptInput').value = data.system_prompt;
+                if(document.getElementById('confThresholdInput')) {
+                    document.getElementById('confThresholdInput').value = data.confidence_threshold;
+                    document.getElementById('confVal').textContent = data.confidence_threshold;
+                }
+                if(document.getElementById('topkInput')) {
+                    document.getElementById('topkInput').value = data.top_k_chunks;
+                    document.getElementById('topkVal').textContent = data.top_k_chunks;
+                }
+                if(document.getElementById('chunkSizeInput')) {
+                    document.getElementById('chunkSizeInput').value = data.chunk_size_tokens;
+                    document.getElementById('chunkVal').textContent = data.chunk_size_tokens;
+                }
+                if(document.getElementById('chunkOverlapInput')) {
+                    document.getElementById('chunkOverlapInput').value = data.chunk_overlap_tokens;
+                    document.getElementById('overlapVal').textContent = data.chunk_overlap_tokens;
+                }
+                if(document.getElementById('llmModelInput')) document.getElementById('llmModelInput').value = data.llm_model;
+                if(document.getElementById('temperatureInput')) {
+                    document.getElementById('temperatureInput').value = data.temperature;
+                    document.getElementById('tempVal').textContent = data.temperature;
+                }
+                if(document.getElementById('escRateAlertInput')) document.getElementById('escRateAlertInput').value = data.escalation_rate_alert;
+                if(document.getElementById('respTimeAlertInput')) document.getElementById('respTimeAlertInput').value = data.response_time_alert;
+                if(document.getElementById('emailAlertsInput')) document.getElementById('emailAlertsInput').checked = data.email_alerts;
+                if(document.getElementById('fallbackPromptInput')) document.getElementById('fallbackPromptInput').value = data.fallback_message;
+                if(document.getElementById('escalatePromptInput')) document.getElementById('escalatePromptInput').value = data.escalation_message;
+            }
+        }
+    } catch(err) { console.error('Error loading config', err); }
+}
+
+async function saveAiConfig() {
+    const payload = {
+        system_prompt: document.getElementById('sysPromptInput')?.value,
+        fallback_message: document.getElementById('fallbackPromptInput')?.value,
+        escalation_message: document.getElementById('escalatePromptInput')?.value,
+        confidence_threshold: parseFloat(document.getElementById('confThresholdInput')?.value || 0.70),
+        top_k_chunks: parseInt(document.getElementById('topkInput')?.value || 5),
+        chunk_size_tokens: parseInt(document.getElementById('chunkSizeInput')?.value || 350),
+        chunk_overlap_tokens: parseInt(document.getElementById('chunkOverlapInput')?.value || 75),
+        llm_model: document.getElementById('llmModelInput')?.value,
+        temperature: parseFloat(document.getElementById('temperatureInput')?.value || 0.2),
+        escalation_rate_alert: parseInt(document.getElementById('escRateAlertInput')?.value || 20),
+        response_time_alert: parseInt(document.getElementById('respTimeAlertInput')?.value || 5),
+        email_alerts: document.getElementById('emailAlertsInput')?.checked
+    };
+    try {
+        const res = await fetch('http://localhost:8085/config/ai', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if(json.status === 'success') {
+            alert('Settings saved dynamically! AI Engine updated.');
+        } else {
+            alert('Failed to save settings: ' + json.message);
+        }
+    } catch(err) {
+        alert('Error saving settings.');
+        console.error(err);
+    }
+}
+
+// --- KNOWLEDGE BASE ---
+async function loadKnowledgeBase() {
+    try {
+        const response = await fetch('http://localhost:8085/knowledge');
+        if (!response.ok) throw new Error('Failed to fetch knowledge base');
+        const docs = await response.json();
+        
+        const tbody = document.getElementById('kbTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        docs.forEach(doc => {
+            const tr = document.createElement('tr');
+            const date = new Date(doc.updated_at || doc.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            
+            let catBadgeClass = 'badge-active';
+            if (doc.category === 'Protection' || doc.category === 'Protection Plans') catBadgeClass = 'badge-processing';
+            if (doc.category === 'Cancellation') catBadgeClass = 'badge-medium';
+            if (doc.category === 'Vehicle' || doc.category === 'Vehicle Standards') catBadgeClass = 'badge-low';
+            
+            let statusBadge = '<span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span>';
+            if (doc.status === 'processing' || doc.status === 'Processing') statusBadge = '<span class="badge-status badge-processing"><i class="bi bi-arrow-repeat me-1"></i>Processing</span>';
+            if (doc.status === 'archived' || doc.status === 'Archived') statusBadge = '<span class="badge-status badge-archived"><i class="bi bi-archive-fill me-1"></i>Archived</span>';
+            
+            tr.innerHTML = `
+                <td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>${doc.title}</b></td>
+                <td><span class="badge-status ${catBadgeClass}">${doc.category || 'General FAQ'}</span></td>
+                <td>${doc.version || '1.0'}</td>
+                <td>${doc.file_size_bytes ? (doc.file_size_bytes / 1024).toFixed(1) + ' KB' : 'N/A'}</td>
+                <td>${date}</td>
+                <td>${statusBadge}</td>
+                <td style="text-align:right;">
+                    <button class="btn btn-sm btn-outline-secondary" title="View"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteDocument(${doc.document_id})"><i class="bi bi-trash3"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (e) {
+        console.error('Error loading knowledge base:', e);
+    }
+}
+
+async function deleteDocument(id) {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    try {
+        const response = await fetch(`http://localhost:8085/knowledge/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            loadKnowledgeBase();
+        } else {
+            alert('Failed to delete document.');
+        }
+    } catch (e) {
+        console.error('Error deleting document:', e);
+        alert('An error occurred.');
+    }
+}
+
+async function uploadDocument() {
+    const title = document.getElementById('kbUploadTitle').value;
+    const category = document.getElementById('kbUploadCategory').value;
+    const version = document.getElementById('kbUploadVersion').value;
+    const fileInput = document.getElementById('fileInput');
+    
+    if (!title || !category || !version || fileInput.files.length === 0) {
+        alert("Please fill in the title, category, version, and select a file.");
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    const text = "Simulated text content extracted from " + file.name;
+    
+    const payload = {
+        title: title,
+        category: category,
+        version: version,
+        source_text: text,
+        file_name: file.name
+    };
+    
+    try {
+        const response = await fetch('http://localhost:8085/knowledge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+            alert('Document uploaded successfully!');
+            document.getElementById('kbUploadTitle').value = '';
+            document.getElementById('kbUploadCategory').value = '';
+            document.getElementById('kbUploadVersion').value = '';
+            clearFile();
+            switchPage('documents', document.querySelector('[data-page=documents]'));
+            loadKnowledgeBase();
+        } else {
+            alert('Upload failed.');
+        }
+    } catch (e) {
+        console.error('Error uploading:', e);
+        alert('An error occurred during upload.');
+    }
+}
+
+// --- INITIAL LOAD ---
+document.addEventListener('DOMContentLoaded', () => {
+    switchPage('dashboard');
+    loadAiConfig();
+    loadKnowledgeBase();
+});
+</script>
+</body>
+
+</html>

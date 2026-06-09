@@ -3,6 +3,7 @@ from typing import List, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from rag_pipeline import embeddings
+from config_service import get_ai_config
 
 async def retrieve_context(user_query: str, db: AsyncSession, top_k: int = 4, distance_threshold: float = 0.3) -> str:
     """
@@ -11,6 +12,12 @@ async def retrieve_context(user_query: str, db: AsyncSession, top_k: int = 4, di
     Implements a 'Context Buffer' by fetching surrounding chunks.
     """
     try:
+        # Fetch dynamic settings
+        config = await get_ai_config()
+        # Admin panel stores 'confidence_threshold'. Vector DB distance = 1.0 - confidence
+        distance_threshold = 1.0 - float(config.get("confidence_threshold", 0.70))
+        top_k = int(config.get("top_k_chunks", 5))
+
         # Step 1: Embed the user's query
         query_vector = await embeddings.aembed_query(user_query)
         vector_json = json.dumps(query_vector)
