@@ -115,5 +115,20 @@ The chatbot exposes fully-documented REST APIs and real-time WebSocket streams. 
 *   **Swagger OpenAPI JSON Schema:** [openapi.json](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/openapi.json) — Exposes Swagger REST API schemas for KB CRUD, settings, and analytics.
 *   **AsyncAPI Specification:** [AsyncAPI.yaml](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/AsyncAPI.yaml) — Defines WebSocket connection streams for regular users (`/ws/chat`) and admin takeover (`/ws/admin`).
 
+---
+
+## 🔧 Production WebSocket & Stability Configuration
+
+To ensure absolute stability when running in a production environment under continuous uptime, the chatbot backend incorporates the following optimizations:
+
+### 1. Database Connection Recovery
+* **Problem:** MariaDB drops idle database connections after a configured `wait_timeout` (typically 8 hours). When users re-connect, stale socket pools crash query executions.
+* **Solution:** The async engines in [database.py](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/backend/database.py) and [operational_api.py](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/backend/operational_api.py) enforce pessimistic pinging (`pool_pre_ping=True`) and connection recycling (`pool_recycle=1800`), automatically recovering from idle timeout drops.
+
+### 2. Single-Worker Memory State
+* **Problem:** WebSocket connection registries and the takeover queue state are stored in the FastAPI application process memory. If Gunicorn spawns multiple worker processes, users and admins routed to different processes cannot communicate.
+* **Solution:** The production `Dockerfile` CMD is configured to run Gunicorn with 1 worker (`--workers 1`), ensuring all WebSockets terminate in the same memory space. Uvicorn's asynchronous ASGI loop natively handles thousands of concurrent open WebSockets on a single process.
+
+
 
 
