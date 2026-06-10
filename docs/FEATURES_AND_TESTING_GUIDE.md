@@ -115,7 +115,7 @@ Follow these step-by-step instructions to test all features.
 
 ### Setup Before Testing
 1.  **Open the local chatbot widget sandbox:** Open **`demo/test_widget.html`** in your browser.
-2.  **Open the Support Admin Dashboard Mock Demo:** Open **`demo/support_admin_dashboard_mock_demo.html`** in another browser window to monitor takeover and ticket events.
+2.  **Open the Production-Ready Admin Dashboard:** Open **`frontend/admin_dashboard.html`** in another browser window to monitor takeover and ticket events.
 3.  **Simulate a Logged-in User Session (Testing Token):**
     To test member-restricted features (like checking reservation status, cancellations, or modifications) without setting up a JWT token signer on your site, append the following query parameters to your browser's address bar when opening `test_widget.html`:
     `?member_id=22&jwt_token=jwt_bypass_demo_token_realdealride_enterprise_testing_secret_key_12345`
@@ -239,7 +239,7 @@ To verify that the Laravel JSON responses, JWT claims, and WebSocket messages co
 4. You will see a list of sent and received packets:
    * **Outgoing frame (green arrow up):** Look at the content. It is a raw text string: `"Hello"`.
    * **Incoming frame (red arrow down):** When the bot answers, a text frame is received. Look at the content. It is a raw text string of the bot response.
-5. In another window, open the Live Support Admin Dashboard mock: `demo/support_admin_dashboard_mock_demo.html`.
+5. In another window, open the Production-Ready Admin Dashboard: `frontend/admin_dashboard.html`.
 6. Click **"Accept Takeover"** for the active session.
 7. Switch back to your chat widget window and look at the WebSockets **Messages/Frames** tab:
    * You will see a new incoming frame containing a JSON string.

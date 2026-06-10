@@ -42,10 +42,10 @@ This package is organized as follows:
 
 ### 4. 🌐 Frontend Assets (`/frontend`)
 *   **`rdr_chatbot.js`:** The plug-and-play JavaScript file for embedding the chatbot widget on the Laravel website.
+*   **`admin_dashboard.html`:** The fully-functional, production-ready admin panel dashboard, providing management interfaces for settings, prompts, categories/tags, unanswered queries, and the RAG test query sandbox.
 
 ### 5. 🧪 Testing & Demos (`/demo`)
 *   **`test_widget.html`:** A simple HTML sandbox file used to run, preview, and test the chat widget locally.
-*   **`support_admin_dashboard_mock_demo.html`:** The fully-functional, production-ready admin panel dashboard, providing local preview capabilities for managing settings, prompts, categories/tags, and session takeover.
 
 ### 6. 🛠️ Website Code Alterations (`/laravel-scripts-changed-for-chatbot-deployment`)
 *   **[README.md](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/laravel-scripts-changed-for-chatbot-deployment/README.md):** Detailed tracking file mapping exactly which files and lines were modified or created inside the Laravel repository.
@@ -128,6 +128,41 @@ To ensure absolute stability when running in a production environment under cont
 ### 2. Single-Worker Memory State
 * **Problem:** WebSocket connection registries and the takeover queue state are stored in the FastAPI application process memory. If Gunicorn spawns multiple worker processes, users and admins routed to different processes cannot communicate.
 * **Solution:** The production `Dockerfile` CMD is configured to run Gunicorn with 1 worker (`--workers 1`), ensuring all WebSockets terminate in the same memory space. Uvicorn's asynchronous ASGI loop natively handles thousands of concurrent open WebSockets on a single process.
+
+---
+
+## 🔄 VPS Migration & Decoupled Knowledge Base Portability
+
+The chatbot incorporates a highly portable, content-decoupled architecture. This design allows administrators to easily recreate the Docker containers on a new VPS, change/upgrade the website framework, or alter the hosting architecture without losing their customized knowledge base (KB) documents.
+
+### How it Works:
+* **Disk-to-DB Synchronization**: The backend service mounts the local `./requirements/knowledge_Base_doc/` host directory to `/app/knowledge_Base_doc/` inside the container.
+* **Automated Startup Ingestion**: Upon startup, the container automatically scans this folder, diffs the plain text documents on disk against the database, and dynamically builds/re-populates the vector index in the MariaDB database using the Gemini API.
+* **No Database Dumps Required**: Rather than dealing with SQL database dumps (which are prone to driver issues or schema incompatibilities during major updates), administrators can maintain and migrate their knowledge base purely as plain text files.
+
+### Step-by-Step Portability Workflow:
+
+1. **Export Stored Policies:**
+   Run the export script to download all policy documents currently stored in the chatbot database as plain text `.txt` files:
+   ```bash
+   python export_kb_to_txt.py
+   ```
+   *(This script queries the backend's `/knowledge/export` REST API and saves the files into a local folder `exported_kb_txt/`)*.
+
+2. **Stage Files for the New Environment:**
+   Copy the exported `.txt` files into the `./requirements/knowledge_Base_doc/` directory on your local repository or the new VPS.
+
+3. **Deploy or Change Infrastructure:**
+   Deploy the Docker services on the new server or update your website architecture:
+   ```bash
+   docker-compose up -d --build
+   ```
+   
+4. **Auto-Populating MariaDB:**
+   As the new containers spin up, the backend's automated ingestion script scans `./requirements/knowledge_Base_doc/` and automatically populates the empty MariaDB vector tables with the text files, generating all required Gemini vector embeddings on-the-fly.
+
+This mechanism ensures the AI chatbot's knowledge remains fully decoupled and highly portable across any infrastructure changes.
+
 
 
 

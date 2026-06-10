@@ -602,27 +602,33 @@ Use `scp`, `sftp`, or any file transfer tool to upload `chatbot_backup.sql` from
 
 ### Option B: Plain Text Export and Docker Container Rebuild Workflow (Highly Portable)
 
-This option uses the chatbot's `/knowledge/export` REST API endpoint via a Python utility script to export all documents as plain `.txt` files. These `.txt` files are then placed inside the `requirements/knowledge_Base_doc/` folder. When you rebuild or restart the chatbot containers, the FastAPI service automatically reads, diffs, and repopulates the MariaDB database with the text files.
+This option uses the chatbot's `/knowledge/export` REST API endpoint via a Python utility script to export all active policy documents as plain `.txt` files. These files are then placed inside the `./requirements/knowledge_Base_doc/` folder. When you rebuild or restart the chatbot containers on the new environment, the FastAPI service automatically reads the disk files, diffs them against the database, and repopulates the MariaDB database tables and vector index.
 
-This is the recommended workflow for migrations, server changes, or when rebuilding Docker images, as it does not require database admin tools or SQL exports.
+This is the **highly recommended workflow** for:
+* **VPS Migrations:** Moving the chatbot container setup to a different host.
+* **Website Framework Changes:** e.g., if you decide to rebuild your main website architecture or migrate from Laravel to another framework/technology, the decoupled REST-based text sync remains completely unaffected.
+* **Infrastructure Upgrades:** Changing databases, updating Docker images, or deleting/purging old Docker container volumes.
+* **Disaster Recovery:** Restoring the AI knowledge base without needing to export or run SQL dump restorations, eliminating database driver issues or version incompatibilities.
+
+Since the plain text files act as the source of truth, placing them in the requirements folder automatically populates the newly built database on container startup.
 
 #### Step-by-Step Procedure
 
 ##### Step 1: Export the Knowledge Base to TXT Files
-1. Run the python utility script included in the deliverables root directory:
+1. Before updating or deleting the current system, execute the python utility script included in the deliverables root directory:
    ```bash
    python export_kb_to_txt.py
    ```
-2. When prompted, enter the chatbot backend URL (e.g. `http://localhost:8085` or `https://yourdomain.com/chat-api`).
+2. When prompted, enter the chatbot backend URL (e.g. `http://localhost:8085` or your production URL).
 3. The script calls the `/knowledge/export` endpoint, extracts the plain text of each policy, and saves it as a `.txt` file inside a newly created `exported_kb_txt/` directory.
 
 ##### Step 2: Copy the TXT Files to the Requirements Folder
 1. Locate the exported `.txt` files in the `exported_kb_txt/` directory.
 2. Copy these files into the `requirements/knowledge_Base_doc/` directory of your chatbot project repository on the new server or local workspace.
-   * *Note: You can safely delete the old `.docx` files from this folder and replace them with your custom `.txt` files. Only the files in this folder will be used to populate the database on container start.*
+   * *Note: You can safely delete the old default `.docx` files from this folder and replace them with your custom `.txt` files. Only the files present in this folder will be used to populate the database on container start.*
 
 ##### Step 3: Rebuild and Restart the Docker Containers
-1. Rebuild and start the containers using Docker Compose. This mounts the updated `requirements/knowledge_Base_doc/` volume into the backend container:
+1. Build and start the containers using Docker Compose. This mounts the updated `requirements/knowledge_Base_doc/` volume into the backend container:
    ```bash
    docker-compose up -d --build
    ```
@@ -630,7 +636,7 @@ This is the recommended workflow for migrations, server changes, or when rebuild
    ```bash
    docker logs -f rdr_fastapi_backend
    ```
-3. The container's startup routine runs the ingestion utility, scans the directory, checks if the documents exist in the database, compares contents, and automatically generates new vector chunks using the Google Gemini API.
+3. The container's startup routine (`clean_and_reingest.py`) automatically runs the ingestion utility, scans the mounted directory, matches/diffs the content, and generates new vector embeddings using the Google Gemini API to populate the database.
 
 ---
 
