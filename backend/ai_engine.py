@@ -256,6 +256,43 @@ async def generate_bot_response(user_message: str, db: AsyncSession, history: li
             comment=comment
         )
 
+    @tool(return_direct=True)
+    async def request_live_support_tool() -> str:
+        """
+        Requests to connect the customer directly to a live human customer support agent (Admin Takeover).
+        Use this tool whenever the user asks for a support person, human support, live chat, live support, 
+        takeover, admin support, speaking to an agent, or if they explicitly want to wait for a person.
+        """
+        if not user_context["member_id"] or user_context["member_id"] == 0:
+            return "I'd be happy to connect you with a live support agent! Could you please provide the email address associated with your RealDealRide account first?"
+        
+        # Mark session as escalated in the DB and transition state to pending_human
+        if session_id:
+            from sqlalchemy import update
+            from database import ChatSession
+            try:
+                await db.execute(
+                    update(ChatSession)
+                    .where(ChatSession.session_id == session_id)
+                    .values(was_escalated=True)
+                )
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                print(f"Error marking ChatSession as escalated: {e}")
+                
+            from socket_manager import manager
+            await manager.set_session_state_pending(session_id, db, user_context["member_id"])
+            
+            # Fetch wait timeout from database configuration
+            from config_service import get_ai_config
+            ai_config = await get_ai_config()
+            timeout_minutes = ai_config.get("takeover_wait_timeout_minutes", 10)
+            
+            return f"System: Please wait. I am connecting you to a live support agent. You can wait up to {timeout_minutes} minutes for an agent to join. If no agent joins, I will automatically file a support ticket for you."
+            
+        return "System: Connecting you to a support agent. One moment please..."
+
     tools = [
         search_car_inventory_tool,
         search_company_policies_tool,
@@ -265,7 +302,8 @@ async def generate_bot_response(user_message: str, db: AsyncSession, history: li
         get_car_reviews_tool,
         get_car_discounts_tool,
         request_reservation_modification_tool,
-        request_booking_cancellation_tool
+        request_booking_cancellation_tool,
+        request_live_support_tool
     ]
     
     # Dynamically inject the user's login state into the prompt to guide the LLM agent

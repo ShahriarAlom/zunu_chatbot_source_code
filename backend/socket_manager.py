@@ -142,9 +142,16 @@ class ConnectionManager:
                 history.append({"role": "user", "content": row.question_text})
                 if row.answer_text and row.answer_text != "[Handled by Human Admin]":
                     history.append({"role": "assistant", "content": row.answer_text})
-        
         # Keep only the last 10 messages
         self.session_histories[session_id] = history[-10:]
+        
+        # Send current state to user client immediately after connect
+        current_state = self.session_states.get(session_id, "bot")
+        if session_id in self.active_admin_connections:
+            current_state = "human_active"
+        import json
+        await websocket.send_text(json.dumps({"role": "status", "state": current_state}))
+        
         return True
 
     async def disconnect_user(self, session_id: str):
@@ -172,6 +179,12 @@ class ConnectionManager:
                 self.timeout_tasks[session_id].cancel()
                 del self.timeout_tasks[session_id]
                 print(f"Admin connected to session {session_id}. Timeout task cancelled.")
+                
+            # Notify the user of state update
+            user_ws = self.active_user_connections.get(session_id)
+            if user_ws:
+                import json
+                await user_ws.send_text(json.dumps({"role": "status", "state": "human_active"}))
         else:
             self.global_admins.append(websocket)
 
@@ -182,11 +195,26 @@ class ConnectionManager:
             # Reset state back to bot if the admin disconnected
             self.session_states[session_id] = "bot"
             
+            # Reset was_escalated in database
+            from database import AsyncSessionLocal, ChatSession
+            from sqlalchemy import update
+            try:
+                async with AsyncSessionLocal() as db:
+                    await db.execute(
+                        update(ChatSession)
+                        .where(ChatSession.session_id == session_id)
+                        .values(was_escalated=False)
+                    )
+                    await db.commit()
+            except Exception as e:
+                print(f"Error resetting was_escalated on admin disconnect: {e}")
+            
             # Notify the user
             user_ws = self.active_user_connections.get(session_id)
             if user_ws:
                 import json
                 await user_ws.send_text(json.dumps({"role": "system", "content": "System: The support agent has left the chat. Routing back to AI..."}))
+                await user_ws.send_text(json.dumps({"role": "status", "state": "bot"}))
         elif websocket in self.global_admins:
             self.global_admins.remove(websocket)
 
@@ -194,12 +222,26 @@ class ConnectionManager:
         """Transitions a session into pending_human state and schedules the fallback timeout."""
         self.session_states[session_id] = "pending_human"
         
+        # Notify user of state update
+        user_ws = self.active_user_connections.get(session_id)
+        if user_ws:
+            import json
+            await user_ws.send_text(json.dumps({"role": "status", "state": "pending_human"}))
+        
         # Cancel existing timeout task if any
         if session_id in self.timeout_tasks:
             self.timeout_tasks[session_id].cancel()
             
-        # Get timeout value from env or default to 300 seconds (5 minutes)
-        timeout_seconds = int(os.getenv("ADMIN_TIMEOUT_SECONDS", "300"))
+        # Get timeout value from AI configuration or default to 10 minutes (600 seconds)
+        from config_service import get_ai_config
+        try:
+            ai_config = await get_ai_config()
+            timeout_minutes = ai_config.get("takeover_wait_timeout_minutes", 10)
+        except Exception as config_err:
+            print(f"Error reading wait timeout config, using default 10m: {config_err}")
+            timeout_minutes = 10
+            
+        timeout_seconds = timeout_minutes * 60
         
         # Schedule the timeout task
         self.timeout_tasks[session_id] = asyncio.create_task(
@@ -216,6 +258,34 @@ class ConnectionManager:
             if self.session_states.get(session_id) == "pending_human":
                 self.session_states[session_id] = "ticket_fallback"
                 
+                # Automatically create the support ticket!
+                from operational_api import create_support_ticket
+                try:
+                    ticket_res = await create_support_ticket(
+                        member_id=member_id,
+                        subject="Live Takeover Queue Timeout Fallback",
+                        description="Customer requested live support agent takeover but no agent joined within the configured wait timeout period.",
+                        priority="high"
+                    )
+                    print(f"Automatically created fallback ticket for session {session_id}: {ticket_res}")
+                except Exception as ticket_err:
+                    print(f"Error creating fallback ticket on timeout: {ticket_err}")
+                
+                # Reset was_escalated in database so they are not locked into escalation on next reconnect
+                from database import AsyncSessionLocal, ChatSession
+                from sqlalchemy import update
+                try:
+                    async with AsyncSessionLocal() as db_session_ctx:
+                        await db_session_ctx.execute(
+                            update(ChatSession)
+                            .where(ChatSession.session_id == session_id)
+                            .values(was_escalated=False)
+                        )
+                        await db_session_ctx.commit()
+                        print(f"Successfully reset was_escalated to False on timeout for session {session_id}")
+                except Exception as db_err:
+                    print(f"Error resetting was_escalated on timeout: {db_err}")
+                
                 # Send fallback notification to the user's widget
                 user_ws = self.active_user_connections.get(session_id)
                 if user_ws:
@@ -227,6 +297,7 @@ class ConnectionManager:
                     )
                     import json
                     await user_ws.send_text(json.dumps({"role": "system", "content": fallback_msg}))
+                    await user_ws.send_text(json.dumps({"role": "status", "state": "ticket_fallback"}))
                 print(f"Session {session_id} timed out waiting for admin. Switched to ticket_fallback.")
         except asyncio.CancelledError:
             pass # Task was cancelled because admin took over or user disconnected

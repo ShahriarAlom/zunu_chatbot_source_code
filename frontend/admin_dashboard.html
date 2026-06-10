@@ -43,10 +43,7 @@
     .sidebar-nav .nav-link:hover { background: var(--rdr-navy-hover); color: #E2E8F0; }
     .sidebar-nav .nav-link.active { background: var(--rdr-teal); color: #fff; box-shadow: 0 2px 8px rgba(23,162,184,0.35); }
     .sidebar-nav .nav-link i { font-size: 17px; width: 20px; text-align: center; }
-    .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
-    .sidebar-footer .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--rdr-navy-hover); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--rdr-teal); }
-    .sidebar-footer .user-name { font-size: 13px; font-weight: 600; color: #E2E8F0; }
-    .sidebar-footer .user-role { font-size: 11px; color: #64748B; }
+
 
     /* ── Main Content ── */
     .main-wrapper { margin-left: var(--sidebar-w); min-height: 100vh; }
@@ -194,24 +191,20 @@
       <div class="nav-section-label">Main</div>
       <a class="nav-link active" data-page="dashboard" onclick="switchPage('dashboard', this)"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
       <a class="nav-link" data-page="support" onclick="switchPage('support', this)"><i class="bi bi-headset"></i> Live Support <span class="badge bg-danger ms-auto rounded-pill" style="font-size:10px;">1</span></a>
-      <a class="nav-link" data-page="tickets" onclick="switchPage('tickets', this)"><i class="bi bi-ticket-detailed-fill"></i> Support Tickets <span class="badge bg-warning text-dark ms-auto rounded-pill" style="font-size:10px;">2</span></a>
+
       <div class="nav-section-label">Knowledge Base</div>
-      <a class="nav-link" data-page="documents" onclick="switchPage('documents', this)"><i class="bi bi-file-earmark-pdf-fill"></i> Documents</a>
-      <a class="nav-link" data-page="upload" onclick="switchPage('upload', this)"><i class="bi bi-cloud-arrow-up-fill"></i> Upload Document</a>
+      <a class="nav-link" data-page="documents" onclick="switchPage('documents', this)"><i class="bi bi-file-earmark-text-fill"></i> Knowledge Base</a>
+      <a class="nav-link" data-page="upload" onclick="switchPage('upload', this)"><i class="bi bi-cloud-arrow-up-fill"></i> Upload Knowledge Base</a>
       <a class="nav-link" data-page="categories" onclick="switchPage('categories', this)"><i class="bi bi-tags-fill"></i> Categories &amp; Tags</a>
       <div class="nav-section-label">AI Performance</div>
       <a class="nav-link" data-page="analytics" onclick="switchPage('analytics', this)"><i class="bi bi-graph-up"></i> Analytics</a>
       <a class="nav-link" data-page="unanswered" onclick="switchPage('unanswered', this)"><i class="bi bi-question-circle-fill"></i> Unanswered Queries</a>
       <div class="nav-section-label">Configuration</div>
-      <a class="nav-link" data-page="prompt" onclick="switchPage('prompt', this)"><i class="bi bi-chat-square-text-fill"></i> Prompt Template</a>
+      <a class="nav-link" data-page="prompt" onclick="switchPage('prompt', this)"><i class="bi bi-chat-square-text-fill"></i> Chatbot Behavior</a>
       <a class="nav-link" data-page="settings" onclick="switchPage('settings', this)"><i class="bi bi-gear-fill"></i> System Settings</a>
       <a class="nav-link" data-page="sandbox" onclick="switchPage('sandbox', this)"><i class="bi bi-terminal-fill"></i> Test Sandbox</a>
     </nav>
-    <div class="sidebar-footer">
-      <div class="avatar">AD</div>
-      <div style="flex:1;min-width:0"><div class="user-name">Admin User</div><div class="user-role">Super Admin</div></div>
-      <i class="bi bi-box-arrow-right" style="color:#64748B;cursor:pointer;" title="Logout"></i>
-    </div>
+
   </aside>
 
   <!-- ════════ MAIN ════════ -->
@@ -227,7 +220,7 @@
         <span style="font-size:12px;color:var(--rdr-muted);font-weight:500;">System Healthy</span>
         <div style="width:1px;height:24px;background:var(--rdr-border);margin:0 8px;"></div>
         <button class="btn btn-sm btn-outline-rdr" onclick="switchPage('sandbox', document.querySelector('[data-page=sandbox]'))"><i class="bi bi-terminal me-1"></i>Sandbox</button>
-        <button class="btn btn-sm btn-rdr" onclick="switchPage('upload', document.querySelector('[data-page=upload]'))"><i class="bi bi-plus-lg me-1"></i>Upload Doc</button>
+        <button class="btn btn-sm btn-rdr" onclick="switchPage('upload', document.querySelector('[data-page=upload]'))"><i class="bi bi-plus-lg me-1"></i>Upload KB</button>
       </div>
     </header>
 
@@ -276,7 +269,7 @@
               <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(40,167,69,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-file-earmark-plus" style="color:var(--rdr-green);"></i></div><div><div style="font-size:13px;font-weight:600;">New document uploaded</div><div style="font-size:12px;color:var(--rdr-muted);">&ldquo;Vehicle Standards v2.1&rdquo; &mdash; HNSW index auto-updated</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">3 minutes ago</div></div></div>
               <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(23,162,184,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-arrow-repeat" style="color:var(--rdr-teal);"></i></div><div><div style="font-size:13px;font-weight:600;">Re-indexing complete</div><div style="font-size:12px;color:var(--rdr-muted);">Trip Extras v1.2 &mdash; 14 chunks, VECTOR INDEX auto-maintained</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">18 minutes ago</div></div></div>
               <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(245,158,11,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-exclamation-triangle" style="color:var(--rdr-orange);"></i></div><div><div style="font-size:13px;font-weight:600;">Escalation rate alert</div><div style="font-size:12px;color:var(--rdr-muted);">Rate hit 22.1% between 2:00&ndash;3:00 PM (threshold: 20%)</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">1 hour ago</div></div></div>
-              <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(23,162,184,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-chat-square-text" style="color:var(--rdr-teal);"></i></div><div><div style="font-size:13px;font-weight:600;">Prompt template updated</div><div style="font-size:12px;color:var(--rdr-muted);">Fallback message refined by admin@realdealride.com</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">2 hours ago</div></div></div>
+              <div class="d-flex align-items-start gap-3 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:32px;height:32px;border-radius:8px;background:rgba(23,162,184,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-chat-square-text" style="color:var(--rdr-teal);"></i></div><div><div style="font-size:13px;font-weight:600;">Chatbot behavior updated</div><div style="font-size:12px;color:var(--rdr-muted);">Fallback message refined by admin@realdealride.com</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">2 hours ago</div></div></div>
               <div class="d-flex align-items-start gap-3"><div style="width:32px;height:32px;border-radius:8px;background:rgba(220,53,69,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-trash3" style="color:var(--rdr-red);"></i></div><div><div style="font-size:13px;font-weight:600;">Document archived</div><div style="font-size:12px;color:var(--rdr-muted);">&ldquo;Old Cancellation Policy v1.0&rdquo; — embeddings deactivated</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:2px;">4 hours ago</div></div></div>
             </div></div>
           </div>
@@ -322,17 +315,7 @@
               </div>
               <div class="card-body-custom flex-grow-1 d-flex flex-column" style="background:#F8FAFC; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
                 
-                <!-- Takeover connection bar -->
-                <div class="p-2 mb-3 bg-light border rounded d-flex align-items-center justify-content-between" style="font-size: 13px;">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="text-muted" style="font-weight: 500;">WebSocket:</span>
-                    <input type="text" id="wsUriInput" value="ws://localhost:8085/ws/admin" class="form-control form-control-sm" style="width: 250px; font-size:12px; font-family: monospace;">
-                  </div>
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="text-muted" style="font-weight: 500;">Session ID:</span>
-                    <input type="text" id="wsSessionInput" value="8842" class="form-control form-control-sm" style="width: 100px; font-size:12px; font-family: monospace;">
-                  </div>
-                </div>
+
 
                 <div class="flex-grow-1" id="supportChatArea" style="overflow-y:auto; padding: 10px; min-height: 250px; max-height: 400px; border: 1px solid var(--rdr-border); border-radius: 8px; background: #fff;">
                   <div class="text-center mb-3"><span class="badge bg-secondary" style="font-size:10px;">Chat Started 2:14 PM</span></div>
@@ -359,171 +342,89 @@
         </div>
       </div>
 
-
-      <!-- ═══ SUPPORT TICKETS (NEW) ═══ -->
-      <div class="page-content" id="page-tickets">
-        <div class="row g-3 mb-4">
-          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card red"><div class="stat-icon"><i class="bi bi-ticket-perforated-fill"></i></div><div class="stat-value" id="statTotalTickets">128</div><div class="stat-label">Total Tickets Created</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>12% this week</span></div></div>
-          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card orange"><div class="stat-icon"><i class="bi bi-envelope-exclamation-fill"></i></div><div class="stat-value" id="statOpenTickets">6</div><div class="stat-label">Open / Unresolved</div><span class="stat-change down"><i class="bi bi-arrow-down-short"></i>2 fewer</span></div></div>
-          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card blue"><div class="stat-icon"><i class="bi bi-hourglass-split"></i></div><div class="stat-value" id="statProgressTickets">14</div><div class="stat-label">In Progress</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>4 active</span></div></div>
-          <div class="col-xl-3 col-md-6 animate-in"><div class="stat-card green"><div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div><div class="stat-value" id="statResolvedTickets">108</div><div class="stat-label">Resolved / Closed</div><span class="stat-change up"><i class="bi bi-arrow-up-short"></i>94.2% rate</span></div></div>
-        </div>
-
-        <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
-          <div class="input-group" style="max-width:320px;">
-            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search" style="color:var(--rdr-muted);"></i></span>
-            <input type="text" class="form-control border-start-0" placeholder="Search tickets..." style="font-size:13px;" id="ticketSearchInput" onkeyup="renderTicketsList()">
-          </div>
-          <select class="form-select" style="width:auto;font-size:13px;" id="ticketCategoryFilter" onchange="renderTicketsList()">
-            <option value="All">All Categories</option>
-            <option value="Breakdown">Breakdown &amp; Safety</option>
-            <option value="Billing">Billing &amp; Payments</option>
-            <option value="General FAQ">General FAQ</option>
-            <option value="Account">Account Settings</option>
-          </select>
-          <select class="form-select" style="width:auto;font-size:13px;" id="ticketPriorityFilter" onchange="renderTicketsList()">
-            <option value="All">All Priorities</option>
-            <option value="Urgent">Urgent</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-          </select>
-          <select class="form-select" style="width:auto;font-size:13px;" id="ticketStatusFilter" onchange="renderTicketsList()">
-            <option value="All">All Statuses</option>
-            <option value="Open">Open</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Resolved">Resolved</option>
-            <option value="Closed">Closed</option>
-          </select>
-          <div class="ms-auto">
-            <button class="btn btn-rdr" onclick="openCreateTicketMock()"><i class="bi bi-plus-lg me-1"></i>Create Ticket</button>
-          </div>
-        </div>
-
-        <div class="row g-4" style="min-height: 500px;">
-          <!-- Left Column: Tickets Queue Sidebar -->
-          <div class="col-xl-4 col-md-5 d-flex flex-column gap-3">
-            <div class="rdr-card flex-grow-1" style="max-height: 600px; overflow-y: auto;">
-              <div class="card-header-custom">
-                <h6><i class="bi bi-ticket-detailed-fill me-2" style="color:var(--rdr-teal)"></i>Tickets Queue</h6>
-              </div>
-              <div class="card-body-custom p-0" id="ticketsListSidebar">
-                <!-- Dynamic Ticket Cards go here -->
-              </div>
-            </div>
-          </div>
-          
-          <!-- Right Column: Detail View & Reply Panel -->
-          <div class="col-xl-8 col-md-7 d-flex flex-column">
-            <!-- Selected Ticket Details Panel -->
-            <div class="rdr-card flex-grow-1 d-flex flex-column" id="ticketDetailPanel" style="display: none !important;">
-              <div class="card-header-custom d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 id="detailTicketTitle" style="font-weight:700;">Ticket #TKT-782415</h6>
-                  <span id="detailTicketSubject" style="font-size:12.5px; font-weight: 500; color:var(--rdr-text);" class="d-block mt-1">Car didn't start at airport</span>
-                </div>
-                <span class="badge bg-secondary-subtle text-secondary" id="detailCategoryBadge">Breakdown</span>
-              </div>
-              <div class="card-body-custom flex-grow-1 d-flex flex-column" style="background:#F8FAFC; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; min-height: 480px;">
-                
-                <!-- Metadata Grid -->
-                <div class="row g-3 mb-3 p-3 bg-white border rounded mx-0 shadow-sm" style="border-radius: 8px;">
-                  <div class="col-md-5 col-sm-12">
-                    <span class="d-block text-muted" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Customer</span>
-                    <span id="detailCustomerName" style="font-size: 13.5px; font-weight: 600; color: var(--rdr-text);">Alex Rivera</span>
-                    <span id="detailCustomerEmail" class="d-block text-muted" style="font-size: 11px;">alex.rivera@example.com</span>
-                  </div>
-                  <div class="col-md-3 col-sm-6">
-                    <span class="d-block text-muted" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Change Status</span>
-                    <select class="form-select form-select-sm mt-1" style="font-size: 12px; padding: 4px 8px;" id="detailStatusSelect" onchange="updateDetailTicketStatus()">
-                      <option value="Open">Open</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Resolved">Resolved</option>
-                      <option value="Closed">Closed</option>
-                    </select>
-                  </div>
-                  <div class="col-md-4 col-sm-6">
-                    <span class="d-block text-muted" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Priority Level</span>
-                    <select class="form-select form-select-sm mt-1" style="font-size: 12px; padding: 4px 8px;" id="detailPrioritySelect" onchange="updateDetailTicketPriority()">
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Urgent">Urgent</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Description -->
-                <div class="card p-3 mb-3 border-0 bg-white shadow-sm" style="border-radius:8px;">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="text-muted" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Issue Description</span>
-                    <span id="detailTicketDate" class="text-muted" style="font-size: 11px;">May 20, 2026</span>
-                  </div>
-                  <p style="font-size: 13.5px; color: var(--rdr-text); line-height: 1.5;" class="mb-0" id="detailMessageContent"></p>
-                </div>
-
-                <!-- Conversation Thread -->
-                <span class="d-block text-muted mb-2 ms-1" style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Conversation Thread</span>
-                <div id="detailChatThread" class="flex-grow-1 mb-3 p-3 bg-white border rounded shadow-sm" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-                  <!-- Messages go here -->
-                </div>
-
-                <!-- Draft Reply -->
-                <div class="mt-auto">
-                  <label class="form-label text-muted" style="font-size:10px; font-weight:600; text-transform: uppercase; letter-spacing: 0.5px;">Draft Reply (Sends Email Notification)</label>
-                  <div class="input-group">
-                    <textarea class="form-control" id="detailReplyTextarea" rows="2" placeholder="Type support reply here..." style="font-size: 13px; resize: none;"></textarea>
-                    <button class="btn btn-rdr d-flex align-items-center justify-content-center" onclick="submitDetailTicketReply()"><i class="bi bi-send-fill"></i></button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Placeholder Panel -->
-            <div id="ticketPlaceholder" class="rdr-card flex-grow-1 d-flex flex-column text-center justify-content-center align-items-center p-5" style="min-height: 480px; background:#F8FAFC;">
-              <i class="bi bi-ticket-detailed text-muted mb-3" style="font-size: 56px;"></i>
-              <h5 class="text-secondary" style="font-weight: 600;">No Ticket Selected</h5>
-              <p class="text-muted" style="font-size: 13.5px; max-width: 320px;">Choose a ticket from the left sidebar queue to view details, update status, and draft email replies.</p>
-            </div>
-          </div>
-        </div>
-      </div>
       <div class="page-content" id="page-documents">
         <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
-          <div class="input-group" style="max-width:320px;"><span class="input-group-text bg-white border-end-0"><i class="bi bi-search" style="color:var(--rdr-muted);"></i></span><input type="text" class="form-control border-start-0" placeholder="Search documents..." style="font-size:13px;"></div>
-          <select class="form-select" style="width:auto;font-size:13px;"><option>All Categories</option><option>Trip Extras</option><option>Protection Plans</option><option>Cancellation</option><option>Vehicle Standards</option><option>Account FAQ</option></select>
-          <select class="form-select" style="width:auto;font-size:13px;"><option>All Statuses</option><option>Active</option><option>Processing</option><option>Archived</option></select>
-          <div class="ms-auto"><button class="btn btn-rdr" onclick="switchPage('upload', document.querySelector('[data-page=upload]'))"><i class="bi bi-plus-lg me-1"></i>Upload Document</button></div>
+          <div class="input-group" style="max-width:320px;"><span class="input-group-text bg-white border-end-0"><i class="bi bi-search" style="color:var(--rdr-muted);"></i></span><input type="text" class="form-control border-start-0" id="kbSearchInput" placeholder="Search knowledge base..." style="font-size:13px;" onkeyup="filterKbTable()"></div>
+          <select class="form-select" id="kbCategoryFilter" style="width:auto;font-size:13px;" onchange="filterKbTable()"><option value="All">All Categories</option></select>
+          <select class="form-select" id="kbStatusFilter" style="width:auto;font-size:13px;" onchange="filterKbTable()"><option value="All">All Statuses</option><option>Active</option><option>Processing</option><option>Archived</option></select>
+          <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-outline-rdr" onclick="bulkExport()"><i class="bi bi-file-earmark-zip-fill me-1"></i>Bulk Export (ZIP)</button>
+            <button class="btn btn-outline-rdr" onclick="openCreateKB()"><i class="bi bi-pencil-square me-1"></i>Create KB</button>
+            <button class="btn btn-rdr" onclick="switchPage('upload', document.querySelector('[data-page=upload]'))"><i class="bi bi-plus-lg me-1"></i>Upload KB</button>
+          </div>
         </div>
-        <div class="rdr-card"><div class="table-responsive"><table class="table rdr-table mb-0"><thead><tr><th>Document</th><th>Category</th><th>Version</th><th>Chunks</th><th>Uploaded</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead><tbody id="kbTableBody">
-          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Trip Extras Policy</b></td><td><span class="badge-status badge-active">Trip Extras</span></td><td>1.2</td><td>14</td><td>May 2, 2026</td><td><span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary" title="View"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary" title="Replace"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary" title="Archive"><i class="bi bi-archive"></i></button></td></tr>
-          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Protection Plans Guide</b></td><td><span class="badge-status badge-processing">Protection</span></td><td>3.0</td><td>47</td><td>Apr 28, 2026</td><td><span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button></td></tr>
-          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Cancellation &amp; Refund Policy</b></td><td><span class="badge-status badge-medium">Cancellation</span></td><td>2.1</td><td>28</td><td>Apr 20, 2026</td><td><span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button></td></tr>
-          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Vehicle Standards &amp; Requirements</b></td><td><span class="badge-status badge-low">Vehicle</span></td><td>2.1</td><td>36</td><td>Apr 15, 2026</td><td><span class="badge-status badge-processing"><i class="bi bi-arrow-repeat me-1"></i>Processing</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button></td></tr>
-          <tr><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>Account &amp; Billing FAQ</b></td><td><span class="badge-status badge-active">Account</span></td><td>1.0</td><td>22</td><td>Apr 10, 2026</td><td><span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button> <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-archive"></i></button></td></tr>
-          <tr style="opacity:0.6;"><td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#94A3B8;"></i><b>Old Cancellation Policy</b></td><td><span class="badge-status badge-archived">Cancellation</span></td><td>1.0</td><td>18</td><td>Jan 5, 2026</td><td><span class="badge-status badge-archived"><i class="bi bi-archive-fill me-1"></i>Archived</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
+        <div class="rdr-card"><div class="table-responsive"><table class="table rdr-table mb-0"><thead><tr><th>Document</th><th>Category</th><th>Version</th><th>Size</th><th>Uploaded</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead><tbody id="kbTableBody">
+          <!-- Dynamic table content -->
         </tbody></table></div></div>
+      </div>
+
+      <!-- ═══ KNOWLEDGE BASE WRITER ═══ -->
+      <div class="page-content" id="page-writer">
+        <div class="row justify-content-center">
+          <div class="col-xl-9">
+            <div class="rdr-card">
+              <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <h6 id="writerHeaderTitle"><i class="bi bi-pencil-square me-2" style="color:var(--rdr-teal)"></i>Create Knowledge Base Document</h6>
+                <button class="btn btn-sm btn-outline-secondary" onclick="switchPage('documents')"><i class="bi bi-arrow-left me-1"></i>Back</button>
+              </div>
+              <div class="card-body-custom">
+                <input type="hidden" id="writerDocId">
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label" style="font-size:13px;font-weight:600;">Document Title <span class="text-danger">*</span></label>
+                    <input type="text" id="writerTitle" class="form-control" placeholder="e.g., Cancellation & Refund Policy" style="font-size:13px;">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" style="font-size:13px;font-weight:600;">Category <span class="text-danger">*</span></label>
+                    <select class="form-select" id="writerCategory" style="font-size:13px;">
+                      <!-- Dynamically loaded -->
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label" style="font-size:13px;font-weight:600;">Version <span class="text-danger">*</span></label>
+                    <input type="text" id="writerVersion" class="form-control" placeholder="e.g., 1.0" value="1.0" style="font-size:13px;">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" style="font-size:13px;font-weight:600;">Tags <span style="font-weight:400;color:var(--rdr-muted);">(Comma-separated)</span></label>
+                  <input type="text" id="writerTags" class="form-control" placeholder="e.g., general, billing, policy" style="font-size:13px;">
+                </div>
+                <div class="mb-4">
+                  <label class="form-label" style="font-size:13px;font-weight:600;">Raw Document Text <span class="text-danger">*</span></label>
+                  <textarea id="writerSourceText" class="form-control prompt-editor" rows="18" placeholder="Type or paste the plain text of your knowledge base here..." style="font-size:13px; font-family: monospace;"></textarea>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pt-3" style="border-top:1px solid var(--rdr-border);">
+                  <span style="font-size:12px;color:var(--rdr-muted);"><i class="bi bi-info-circle me-1"></i>Saving triggers dynamic text chunking and vector embedding updates.</span>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary" onclick="switchPage('documents')" style="font-size:13px;">Cancel</button>
+                    <button class="btn btn-rdr" onclick="saveKB()"><i class="bi bi-check-lg me-1"></i>Save Knowledge Base</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ═══ UPLOAD ═══ -->
       <div class="page-content" id="page-upload">
         <div class="row justify-content-center"><div class="col-xl-8">
-          <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-cloud-arrow-up-fill me-2" style="color:var(--rdr-teal)"></i>Upload Knowledge Base Document</h6></div>
+          <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-cloud-arrow-up-fill me-2" style="color:var(--rdr-teal)"></i>Upload Knowledge Base</h6></div>
           <div class="card-body-custom">
             <div class="upload-zone mb-4" id="uploadZone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" onclick="document.getElementById('fileInput').click()">
-              <i class="bi bi-cloud-arrow-up d-block"></i>
-              <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Drop your PDF here or click to browse</div>
-              <div style="font-size:12px;color:var(--rdr-muted);">Supported: PDF files up to 50MB &bull; VECTOR INDEX auto-updates on ingest</div>
-              <input type="file" id="fileInput" accept=".pdf" style="display:none;" onchange="handleFileSelect(this)">
+              <i class="bi bi-filetype-txt d-block" style="font-size:36px; color:var(--rdr-teal); margin-bottom:12px;"></i>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Drop your TXT file here or click to browse</div>
+              <div style="font-size:12px;color:var(--rdr-muted);">Supported: Plain text files (.txt) &bull; Vector index auto-updates on ingest</div>
+              <input type="file" id="fileInput" accept=".txt" style="display:none;" onchange="handleFileSelect(this)">
             </div>
-            <div id="filePreview" class="mb-4" style="display:none;"><div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:#F1F5F9;"><i class="bi bi-file-earmark-pdf-fill" style="font-size:28px;color:#DC3545;"></i><div class="flex-grow-1"><div id="fileName" style="font-size:13px;font-weight:600;"></div><div id="fileSize" style="font-size:12px;color:var(--rdr-muted);"></div></div><button class="btn btn-sm btn-outline-danger" onclick="clearFile()"><i class="bi bi-x-lg"></i></button></div></div>
+            <div id="filePreview" class="mb-4" style="display:none;"><div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:#F1F5F9;"><i class="bi bi-file-earmark-text-fill" style="font-size:28px;color:var(--rdr-teal);"></i><div class="flex-grow-1"><div id="fileName" style="font-size:13px;font-weight:600;"></div><div id="fileSize" style="font-size:12px;color:var(--rdr-muted);"></div></div><button class="btn btn-sm btn-outline-danger" onclick="clearFile()"><i class="bi bi-x-lg"></i></button></div></div>
             <div class="row g-3">
               <div class="col-md-6"><label class="form-label" style="font-size:13px;font-weight:600;">Document Title <span class="text-danger">*</span></label><input type="text" id="kbUploadTitle" class="form-control" placeholder="e.g., Trip Extras Policy" style="font-size:13px;"></div>
-              <div class="col-md-6"><label class="form-label" style="font-size:13px;font-weight:600;">Category <span class="text-danger">*</span></label><select class="form-select" id="kbUploadCategory" style="font-size:13px;"><option value="">Select category...</option><option>Trip Extras</option><option>Protection Plans</option><option>Cancellation</option><option>Vehicle Standards</option><option>Account FAQ</option><option>+ Create New Category</option></select></div>
-              <div class="col-md-4"><label class="form-label" style="font-size:13px;font-weight:600;">Version <span class="text-danger">*</span></label><input type="text" id="kbUploadVersion" class="form-control" placeholder="e.g., 1.0" style="font-size:13px;"></div>
+              <div class="col-md-6"><label class="form-label" style="font-size:13px;font-weight:600;">Category <span class="text-danger">*</span></label><select class="form-select" id="kbUploadCategory" style="font-size:13px;"><option value="">Select category...</option></select></div>
+              <div class="col-md-4"><label class="form-label" style="font-size:13px;font-weight:600;">Version <span class="text-danger">*</span></label><input type="text" id="kbUploadVersion" class="form-control" placeholder="e.g., 1.0" value="1.0" style="font-size:13px;"></div>
               <div class="col-md-4"><label class="form-label" style="font-size:13px;font-weight:600;">Effective Date</label><input type="date" class="form-control" style="font-size:13px;"></div>
               <div class="col-md-4"><label class="form-label" style="font-size:13px;font-weight:600;">Priority</label><select class="form-select" style="font-size:13px;"><option>Normal</option><option>High</option><option>Low</option></select></div>
-              <div class="col-12"><label class="form-label" style="font-size:13px;font-weight:600;">Tags</label><input type="text" class="form-control" placeholder="Enter tags separated by commas (e.g., refuel, extras, gear)" style="font-size:13px;"></div>
+              <div class="col-12"><label class="form-label" style="font-size:13px;font-weight:600;">Tags</label><input type="text" id="kbUploadTags" class="form-control" placeholder="Enter tags separated by commas (e.g., refuel, extras, gear)" style="font-size:13px;"></div>
             </div>
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top:1px solid var(--rdr-border);"><button class="btn btn-outline-secondary" style="font-size:13px;">Cancel</button><button class="btn btn-rdr" onclick="uploadDocument()"><i class="bi bi-cloud-arrow-up me-1"></i>Upload &amp; Index</button></div>
           </div></div>
@@ -534,16 +435,28 @@
       <div class="page-content" id="page-categories">
         <div class="row g-4">
           <div class="col-xl-7">
-            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-tags-fill me-2" style="color:var(--rdr-teal)"></i>Document Categories</h6><button class="btn btn-sm btn-rdr" data-bs-toggle="modal" data-bs-target="#categoryModal"><i class="bi bi-plus-lg me-1"></i>Add Category</button></div>
-            <div class="table-responsive"><table class="table rdr-table mb-0"><thead><tr><th>Category</th><th>Documents</th><th>Chunks</th><th>Priority Boost</th><th style="text-align:right;">Actions</th></tr></thead><tbody>
-              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-teal);"></i><b>Trip Extras</b></td><td>3</td><td>42</td><td><span class="badge-status badge-active">+0.10</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
-              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-green);"></i><b>Protection Plans</b></td><td>2</td><td>61</td><td><span class="badge-status badge-active">+0.05</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
-              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-orange);"></i><b>Cancellation</b></td><td>2</td><td>46</td><td><span class="badge-status badge-medium">+0.08</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
-              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-blue);"></i><b>Vehicle Standards</b></td><td>1</td><td>36</td><td><span class="badge-status badge-low">0.00</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
-              <tr><td><i class="bi bi-circle-fill me-2" style="font-size:8px;color:var(--rdr-red);"></i><b>Account FAQ</b></td><td>1</td><td>22</td><td><span class="badge-status badge-low">0.00</span></td><td style="text-align:right;"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button></td></tr>
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-tags-fill me-2" style="color:var(--rdr-teal)"></i>Document Categories</h6><button class="btn btn-sm btn-rdr" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openAddCategory()"><i class="bi bi-plus-lg me-1"></i>Add Category</button></div>
+            <div class="table-responsive"><table class="table rdr-table mb-0"><thead><tr><th>Category</th><th>Documents</th><th>Chunks</th><th>Priority Boost</th><th style="text-align:right;">Actions</th></tr></thead><tbody id="categoriesTableBody">
             </tbody></table></div></div>
           </div>
-          <div class="col-xl-5"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-info-circle me-2" style="color:var(--rdr-teal)"></i>About Categories</h6></div><div class="card-body-custom" style="font-size:13px;color:var(--rdr-muted);line-height:1.7;"><p><b style="color:var(--rdr-text);">Categories</b> organize your KB documents and influence retrieval. When a Member asks a question, <code>VEC_DISTANCE_COSINE()</code> finds the nearest chunks and the category <b style="color:var(--rdr-text);">Priority Boost</b> adds a score bonus to surface the most relevant category first.</p><p><b style="color:var(--rdr-text);">Tags</b> provide finer-grained filtering. A document can have multiple tags across categories for cross-topic discoverability.</p></div></div></div>
+          <div class="col-xl-5">
+            <div class="rdr-card mb-4">
+              <div class="card-header-custom">
+                <h6><i class="bi bi-tags-fill me-2" style="color:var(--rdr-teal)"></i>Tags Management</h6>
+              </div>
+              <div class="card-body-custom">
+                <div class="d-flex gap-2 mb-3">
+                  <input type="text" id="newTagNameInput" class="form-control form-control-sm" placeholder="Add new tag name..." style="font-size:13px;">
+                  <button class="btn btn-sm btn-rdr" onclick="addTag()"><i class="bi bi-plus-lg"></i></button>
+                </div>
+                <div id="tagsContainer" class="d-flex flex-wrap pt-2">
+                  <!-- Tags loaded dynamically -->
+                </div>
+              </div>
+            </div>
+            
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-info-circle me-2" style="color:var(--rdr-teal)"></i>About Categories</h6></div><div class="card-body-custom" style="font-size:13px;color:var(--rdr-muted);line-height:1.7;"><p><b style="color:var(--rdr-text);">Categories</b> organize your KB documents and influence retrieval. When a Member asks a question, <code>VEC_DISTANCE_COSINE()</code> finds the nearest chunks and the category <b style="color:var(--rdr-text);">Priority Boost</b> adds a score bonus to surface the most relevant category first.</p><p><b style="color:var(--rdr-text);">Tags</b> provide finer-grained filtering. A document can have multiple tags across categories for cross-topic discoverability.</p></div></div>
+          </div>
         </div>
       </div>
 
@@ -587,9 +500,9 @@
       <!-- ═══ PROMPT TEMPLATE ═══ -->
       <div class="page-content" id="page-prompt">
         <div class="row g-4">
-          <div class="col-xl-8"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-chat-square-text-fill me-2" style="color:var(--rdr-teal)"></i>System Prompt Template</h6><button class="btn btn-sm btn-rdr ms-auto" onclick="saveAiConfig()">Save Prompts</button><span style="font-size:11px;color:var(--rdr-muted);">Last edited 2 hours ago</span></div>
+          <div class="col-xl-8"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-chat-square-text-fill me-2" style="color:var(--rdr-teal)"></i>Chatbot Personality & Behavior Guidelines</h6><button class="btn btn-sm btn-rdr ms-auto" onclick="saveAiConfig()">Save Behavior</button></div>
           <div class="card-body-custom">
-            <label class="form-label" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);">System Instructions</label>
+            <label class="form-label" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);">System Instructions (AI Behavior & Persona)</label>
             <textarea id="sysPromptInput" class="prompt-editor form-control mb-3">You are the RealDealRide AI Assistant, helping Members with questions about our peer-to-peer car rental platform.
 
 RULES:
@@ -608,7 +521,7 @@ TONE: Conversational, warm, and professional.</textarea>
             <textarea id="escalatePromptInput" class="prompt-editor form-control" style="min-height:80px;">I'd be happy to help with that, but I'll need to connect you with one of our support team members who can access your account details. Hang tight — someone will be with you shortly!</textarea>
             <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top:1px solid var(--rdr-border);"><span style="font-size:12px;color:var(--rdr-muted);"><i class="bi bi-info-circle me-1"></i>Changes take effect within 60 seconds</span><div class="d-flex gap-2"><button class="btn btn-outline-secondary" style="font-size:13px;">Revert</button><button class="btn btn-rdr"><i class="bi bi-check-lg me-1"></i>Save Changes</button></div></div>
           </div></div></div>
-          <div class="col-xl-4"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-clock-history me-2" style="color:var(--rdr-teal)"></i>Version History</h6></div><div class="card-body-custom">
+          <div class="col-xl-4"><div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-clock-history me-2" style="color:var(--rdr-teal)"></i>Version History</h6></div><div class="card-body-custom" id="promptHistoryList">
             <div class="d-flex align-items-center gap-2 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:6px;height:6px;border-radius:50%;background:var(--rdr-green);flex-shrink:0;"></div><div style="font-size:12px;"><b>Current</b> &mdash; May 4, 2026 2:15 PM<br><span style="color:var(--rdr-muted);">Refined fallback message tone</span></div></div>
             <div class="d-flex align-items-center gap-2 mb-3 pb-3" style="border-bottom:1px solid #F1F5F9;"><div style="width:6px;height:6px;border-radius:50%;background:var(--rdr-muted);flex-shrink:0;"></div><div style="font-size:12px;">v3 &mdash; Apr 30, 2026<br><span style="color:var(--rdr-muted);">Added account-specific escalation rule</span></div></div>
             <div class="d-flex align-items-center gap-2"><div style="width:6px;height:6px;border-radius:50%;background:var(--rdr-muted);flex-shrink:0;"></div><div style="font-size:12px;">v2 &mdash; Apr 15, 2026<br><span style="color:var(--rdr-muted);">Initial production prompt</span></div></div>
@@ -643,8 +556,9 @@ TONE: Conversational, warm, and professional.</textarea>
             </div></div>
 
             <!-- Alert Thresholds -->
-            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-bell-fill me-2" style="color:var(--rdr-orange)"></i>Alert Thresholds</h6></div>
+            <div class="rdr-card"><div class="card-header-custom"><h6><i class="bi bi-bell-fill me-2" style="color:var(--rdr-orange)"></i>Alert Thresholds &amp; Takeover</h6></div>
             <div class="card-body-custom">
+              <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Live Support Wait Timeout (Minutes)</label><input type="number" id="takeoverWaitInput" class="form-control" value="10" min="1" max="120" style="font-size:13px;"></div>
               <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Escalation Rate Alert (%)</label><input type="number" id="escRateAlertInput" class="form-control" value="20" style="font-size:13px;"></div>
               <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Response Time Alert (seconds)</label><input type="number" id="respTimeAlertInput" class="form-control" value="5" style="font-size:13px;"></div>
               <div class="form-check form-switch"><input id="emailAlertsInput" class="form-check-input" type="checkbox" checked><label class="form-check-label" style="font-size:13px;">Email alerts to admin team</label></div>
@@ -652,11 +566,6 @@ TONE: Conversational, warm, and professional.</textarea>
           </div>
         </div>
 
-        <!-- ════════════════════════════════════════════════════════════ -->
-        <!--  NEW CARD: MariaDB HNSW Vector Index Configuration         -->
-        <!--  This card is NEW — it was not in the MySQL version.       -->
-        <!--  Maps to MariaDB 11.7+ native system variables.            -->
-        <!-- ════════════════════════════════════════════════════════════ -->
         <div class="row g-4 mt-1">
           <div class="col-xl-8">
             <div class="rdr-card" style="border-color:rgba(23,162,184,0.3);">
@@ -672,8 +581,7 @@ TONE: Conversational, warm, and professional.</textarea>
                         <div><div style="font-size:13px;font-weight:600;">mhnsw_default_m</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:1px;">Graph connectivity — higher = more accurate, slower insert</div></div>
                         <span class="range-display" id="hnswMVal">6</span>
                       </div>
-                      <input type="range" class="form-range" min="3" max="24" step="1" value="6" oninput="document.getElementById('hnswMVal').textContent=this.value">
-                      <div class="d-flex justify-content-between" style="font-size:10px;color:var(--rdr-muted);"><span>3 (Fast inserts)</span><span>24 (Max recall)</span></div>
+                      <input type="range" id="hnswMInput" class="form-range" min="3" max="24" step="1" value="6" oninput="document.getElementById('hnswMVal').textContent=this.value">
                     </div>
 
                     <div class="mb-4">
@@ -681,8 +589,7 @@ TONE: Conversational, warm, and professional.</textarea>
                         <div><div style="font-size:13px;font-weight:600;">mhnsw_ef_search</div><div style="font-size:11px;color:var(--rdr-muted);margin-top:1px;">Search candidates examined — higher = better recall, slower query</div></div>
                         <span class="range-display" id="hnswEfVal">20</span>
                       </div>
-                      <input type="range" class="form-range" min="10" max="200" step="10" value="20" oninput="document.getElementById('hnswEfVal').textContent=this.value">
-                      <div class="d-flex justify-content-between" style="font-size:10px;color:var(--rdr-muted);"><span>10 (Fastest)</span><span>200 (Highest recall)</span></div>
+                      <input type="range" id="hnswEfInput" class="form-range" min="10" max="200" step="10" value="20" oninput="document.getElementById('hnswEfVal').textContent=this.value">
                     </div>
 
                     <div class="mb-4">
@@ -697,9 +604,9 @@ TONE: Conversational, warm, and professional.</textarea>
                     <div>
                       <label class="form-label" style="font-size:13px;font-weight:600;">mhnsw_default_distance</label>
                       <div style="font-size:11px;color:var(--rdr-muted);margin-bottom:6px;">Distance metric for VECTOR INDEX. Use <code>cosine</code> for text embeddings.</div>
-                      <select class="form-select" style="font-size:13px;max-width:220px;">
-                        <option selected>cosine</option>
-                        <option>euclidean</option>
+                      <select id="hnswDistanceInput" class="form-select" style="font-size:13px;max-width:220px;">
+                        <option value="cosine" selected>cosine</option>
+                        <option value="euclidean">euclidean</option>
                       </select>
                     </div>
                   </div>
@@ -708,9 +615,9 @@ TONE: Conversational, warm, and professional.</textarea>
                       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--rdr-muted);margin-bottom:12px;"><i class="bi bi-info-circle me-1"></i> Current Index Status</div>
                       <div class="hnsw-param-row"><div><div class="hnsw-param-label">Index Type</div></div><div class="hnsw-param-value">HNSW</div></div>
                       <div class="hnsw-param-row"><div><div class="hnsw-param-label">Distance Metric</div></div><div class="hnsw-param-value">Cosine</div></div>
-                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Indexed Vectors</div></div><div class="hnsw-param-value">8,412</div></div>
-                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Dimensions</div></div><div class="hnsw-param-value">1536</div></div>
-                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Est. Memory</div></div><div class="hnsw-param-value">~412 MB</div></div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Indexed Vectors</div></div><div class="hnsw-param-value" id="hnswStatusCount">8,412</div></div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Dimensions</div></div><div class="hnsw-param-value" id="hnswStatusDimensions">3072</div></div>
+                      <div class="hnsw-param-row"><div><div class="hnsw-param-label">Est. Memory</div></div><div class="hnsw-param-value" id="hnswStatusMemory">~412 MB</div></div>
                       <div class="hnsw-param-row"><div><div class="hnsw-param-label">Auto-Maintained</div></div><div class="hnsw-param-value" style="color:var(--rdr-green);">Yes <i class="bi bi-check-circle-fill"></i></div></div>
                       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rdr-border);font-size:11px;color:var(--rdr-muted);">
                         <i class="bi bi-lightning-charge-fill me-1" style="color:var(--rdr-teal);"></i>
@@ -739,7 +646,7 @@ TONE: Conversational, warm, and professional.</textarea>
           </div>
         </div>
 
-        <div class="d-flex justify-content-end gap-2 mt-4"><button class="btn btn-outline-secondary" style="font-size:13px;">Reset to Defaults</button><button class="btn btn-rdr"><i class="bi bi-check-lg me-1"></i>Save All Settings</button></div>
+        <div class="d-flex justify-content-end gap-2 mt-4"><button class="btn btn-outline-secondary" style="font-size:13px;">Reset to Defaults</button><button class="btn btn-rdr" onclick="saveAiConfig()"><i class="bi bi-check-lg me-1"></i>Save All Settings</button></div>
       </div>
 
       <!-- ═══════════════════════════════════════════════════════════ -->
@@ -810,20 +717,25 @@ TONE: Conversational, warm, and professional.</textarea>
 
   <!-- Category Modal -->
   <div class="modal fade" id="categoryModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" style="border-radius:12px;">
-    <div class="modal-header" style="border-bottom:1px solid var(--rdr-border);padding:18px 22px;"><h6 class="modal-title" style="font-weight:700;">Add New Category</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-header" style="border-bottom:1px solid var(--rdr-border);padding:18px 22px;"><h6 class="modal-title" id="categoryModalTitle" style="font-weight:700;">Add New Category</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body" style="padding:22px;">
-      <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Category Name</label><input type="text" class="form-control" placeholder="e.g., Insurance Policies" style="font-size:13px;"></div>
-      <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Priority Boost</label><input type="number" class="form-control" value="0.00" step="0.01" min="0" max="0.50" style="font-size:13px;"></div>
-      <div><label class="form-label" style="font-size:13px;font-weight:600;">Description</label><textarea class="form-control" rows="2" placeholder="Brief description..." style="font-size:13px;"></textarea></div>
+      <input type="hidden" id="catModalId">
+      <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Category Name</label><input type="text" id="catModalName" class="form-control" placeholder="e.g., Insurance Policies" style="font-size:13px;"></div>
+      <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Priority Boost</label><input type="number" id="catModalBoost" class="form-control" value="0.00" step="0.01" min="0" max="0.50" style="font-size:13px;"></div>
+      <div class="mb-3"><label class="form-label" style="font-size:13px;font-weight:600;">Hex Color</label>
+        <div class="d-flex gap-2 align-items-center">
+          <input type="color" id="catModalColor" class="form-control form-control-color" value="#2E75B6" style="width:45px;height:38px;padding:3px;">
+          <span style="font-size:12px;color:var(--rdr-muted);">Select card accent/bullet color</span>
+        </div>
+      </div>
+      <div><label class="form-label" style="font-size:13px;font-weight:600;">Description</label><textarea id="catModalDesc" class="form-control" rows="2" placeholder="Brief description..." style="font-size:13px;"></textarea></div>
     </div>
-    <div class="modal-footer" style="border-top:1px solid var(--rdr-border);padding:14px 22px;"><button class="btn btn-outline-secondary" data-bs-dismiss="modal" style="font-size:13px;">Cancel</button><button class="btn btn-rdr" data-bs-dismiss="modal">Create Category</button></div>
+    <div class="modal-footer" style="border-top:1px solid var(--rdr-border);padding:14px 22px;"><button class="btn btn-outline-secondary" data-bs-dismiss="modal" style="font-size:13px;">Cancel</button><button class="btn btn-rdr" id="catModalSaveBtn" data-bs-dismiss="modal" onclick="saveCategory()">Create Category</button></div>
   </div></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
 // --- GLOBAL STATE ---
-let ticketsData = [];
-let currentTicketId = null;
 let supportSessionId = null;
 let supportWs = null;
 let isSupportTakeoverActive = false;
@@ -838,9 +750,9 @@ function switchPage(page, el) {
     const titles = { 
         dashboard: 'Dashboard', 
         support: 'Live Support Queue', 
-        tickets: 'Support Tickets Queue', 
-        documents: 'Knowledge Base Documents', 
-        upload: 'Upload Document', 
+        documents: 'Knowledge Base', 
+        upload: 'Upload Knowledge Base', 
+        writer: 'Knowledge Base Writer',
         categories: 'Categories & Tags', 
         analytics: 'AI Performance Analytics', 
         unanswered: 'Unanswered Queries', 
@@ -859,8 +771,6 @@ function switchPage(page, el) {
     
     if (page === 'dashboard') {
         loadDashboardStats();
-    } else if (page === 'tickets') {
-        loadTickets();
     } else if (page === 'support') {
         loadSupportQueue();
         window.supportQueueInterval = setInterval(loadSupportQueue, 5000);
@@ -868,6 +778,12 @@ function switchPage(page, el) {
         loadUnansweredQueries();
     } else if (page === 'analytics') {
         loadAnalyticsPage();
+    } else if (page === 'categories') {
+        loadCategoriesPage();
+    } else if (page === 'prompt') {
+        loadPromptHistory();
+    } else if (page === 'settings') {
+        loadAiConfig();
     }
 }
 
@@ -1003,7 +919,7 @@ function switchToUploadPage(queryText) {
     switchPage('upload', document.querySelector('[data-page=upload]'));
     document.getElementById('kbUploadTitle').value = queryText;
     document.getElementById('kbUploadVersion').value = '1.0';
-    document.getElementById('kbUploadCategory').value = 'General FAQ';
+    document.getElementById('kbUploadCategory').value = '5';
 }
 
 // --- LIVE SUPPORT QUEUE ---
@@ -1078,7 +994,6 @@ async function loadSupportQueue() {
 
 async function selectSupportSession(sessionId) {
     supportSessionId = sessionId;
-    document.getElementById('wsSessionInput').value = sessionId;
     document.getElementById('activeSupportHeader').innerHTML = `<i class="bi bi-chat-text-fill me-2" style="color:var(--rdr-blue)"></i>Active Chat: Session #${sessionId}`;
     
     document.querySelectorAll('.support-session-item').forEach(el => {
@@ -1145,15 +1060,19 @@ async function selectSupportSession(sessionId) {
 }
 
 function toggleTakeover() {
-    const wsUri = document.getElementById('wsUriInput').value.trim();
-    const sessionId = document.getElementById('wsSessionInput').value.trim();
+    const sessionId = supportSessionId;
+    if (!sessionId) {
+        alert("Please select an active support session first.");
+        return;
+    }
+    
+    let wsUri = "ws://localhost:8085/ws/admin";
+    if (window.location.protocol.startsWith("http")) {
+        const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUri = `${wsProto}//${window.location.host}/ws/admin`;
+    }
     
     if (!isSupportTakeoverActive) {
-        if (!wsUri || !sessionId) {
-            alert("Please specify a valid WebSocket URI and Session ID.");
-            return;
-        }
-        
         document.getElementById('supportConnectionStatus').innerText = "Connecting...";
         document.getElementById('supportConnectionStatus').className = "badge bg-warning text-dark";
         
@@ -1265,273 +1184,7 @@ function sendSupportLiveMessage() {
     input.value = "";
 }
 
-// --- SUPPORT TICKETS ---
-async function loadTickets() {
-    try {
-        const catFilter = document.getElementById('ticketCategoryFilter').value;
-        const priFilter = document.getElementById('ticketPriorityFilter').value;
-        const statFilter = document.getElementById('ticketStatusFilter').value;
-        const searchVal = document.getElementById('ticketSearchInput').value.trim();
-        
-        let url = 'http://localhost:8085/api/tickets?';
-        if (catFilter) url += `category=${encodeURIComponent(catFilter)}&`;
-        if (priFilter) url += `priority=${encodeURIComponent(priFilter)}&`;
-        if (statFilter) url += `status=${encodeURIComponent(statFilter)}&`;
-        if (searchVal) url += `search=${encodeURIComponent(searchVal)}&`;
-        
-        const response = await fetch(url);
-        if (response.ok) {
-            ticketsData = await response.json();
-            
-            let total = ticketsData.length;
-            let open = ticketsData.filter(t => t.status.toLowerCase() === 'open').length;
-            let inProgress = ticketsData.filter(t => t.status.toLowerCase() === 'in progress' || t.status.toLowerCase() === 'in-progress').length;
-            let resolved = ticketsData.filter(t => t.status.toLowerCase() === 'resolved' || t.status.toLowerCase() === 'completed' || t.status.toLowerCase() === 'closed').length;
-            
-            document.getElementById('statTotalTickets').textContent = total;
-            document.getElementById('statOpenTickets').textContent = open;
-            document.getElementById('statProgressTickets').textContent = inProgress;
-            document.getElementById('statResolvedTickets').textContent = resolved;
-            
-            renderTicketsList();
-            
-            if (ticketsData.length > 0) {
-                const exists = ticketsData.some(t => t.id === currentTicketId);
-                if (exists) {
-                    selectTicket(currentTicketId);
-                } else {
-                    selectTicket(ticketsData[0].id);
-                }
-            } else {
-                document.getElementById('ticketDetailPanel').style.setProperty('display', 'none', 'important');
-                document.getElementById('ticketPlaceholder').style.setProperty('display', 'flex', 'important');
-            }
-        }
-    } catch(err) {
-        console.error('Error loading tickets', err);
-    }
-}
 
-function renderTicketsList() {
-    const sidebar = document.getElementById('ticketsListSidebar');
-    if (!sidebar) return;
-    
-    sidebar.innerHTML = '';
-    if (ticketsData.length === 0) {
-        sidebar.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:12px;">No tickets found.</div>';
-        return;
-    }
-    
-    ticketsData.forEach(tkt => {
-        const item = document.createElement('div');
-        item.id = 'tcard-' + tkt.id;
-        item.className = 'p-3 border-bottom ticket-card-item';
-        if (tkt.id === currentTicketId) {
-            item.className += ' active';
-            item.style.background = 'rgba(23,162,184,0.05)';
-        }
-        item.style.cursor = 'pointer';
-        item.style.transition = 'background 0.2s';
-        
-        let priorityBadge = '';
-        if (tkt.priority === 'Urgent') priorityBadge = '<span class="badge-status badge-high ms-2">Urgent</span>';
-        else if (tkt.priority === 'High') priorityBadge = '<span class="badge-status badge-medium ms-2">High</span>';
-        
-        let statusClass = 'badge-active';
-        if (tkt.status === 'Open') statusClass = 'badge-high';
-        if (tkt.status === 'In Progress') statusClass = 'badge-processing';
-        if (tkt.status === 'Resolved' || tkt.status === 'Closed') statusClass = 'badge-active';
-        
-        item.onclick = () => selectTicket(tkt.id);
-        item.onmouseover = () => { if(!item.classList.contains('active')) item.style.background = '#F8FAFC'; };
-        item.onmouseout = () => { if(!item.classList.contains('active')) item.style.background = 'transparent'; };
-        
-        item.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-1">
-                <span style="font-size:12.5px;font-weight:600;">#${tkt.id}</span>
-                <span class="badge-status ${statusClass}" style="font-size:9.5px;">${tkt.status}</span>
-            </div>
-            <div style="font-size:13px;font-weight:600;color:var(--rdr-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tkt.subject}</div>
-            <div class="d-flex justify-content-between align-items-center mt-2" style="font-size:11.5px;color:var(--rdr-muted);">
-                <span>${tkt.customer} ${priorityBadge}</span>
-                <span>${tkt.date}</span>
-            </div>
-        `;
-        sidebar.appendChild(item);
-    });
-}
-
-function selectTicket(ticketId) {
-    currentTicketId = ticketId;
-    
-    document.querySelectorAll('.ticket-card-item').forEach(el => {
-        el.classList.remove('active');
-        el.style.background = 'transparent';
-    });
-    const selectedCard = document.getElementById('tcard-' + ticketId);
-    if (selectedCard) {
-        selectedCard.classList.add('active');
-        selectedCard.style.background = 'rgba(23,162,184,0.05)';
-    }
-    
-    const tkt = ticketsData.find(t => t.id === ticketId);
-    if (!tkt) return;
-    
-    document.getElementById('ticketPlaceholder').style.setProperty('display', 'none', 'important');
-    document.getElementById('ticketDetailPanel').style.setProperty('display', 'flex', 'important');
-    
-    document.getElementById('detailTicketTitle').textContent = `Ticket #${tkt.id}`;
-    document.getElementById('detailTicketSubject').textContent = tkt.subject;
-    
-    const categoryBadge = document.getElementById('detailCategoryBadge');
-    if (categoryBadge) categoryBadge.textContent = tkt.category;
-    
-    document.getElementById('detailCustomerName').textContent = tkt.customer;
-    document.getElementById('detailCustomerEmail').textContent = tkt.email;
-    document.getElementById('detailTicketDate').textContent = tkt.date;
-    document.getElementById('detailMessageContent').textContent = tkt.message;
-    
-    document.getElementById('detailStatusSelect').value = tkt.status === 'Resolved' ? 'Resolved' : tkt.status;
-    document.getElementById('detailPrioritySelect').value = tkt.priority;
-    document.getElementById('detailReplyTextarea').value = '';
-    
-    const threadEl = document.getElementById('detailChatThread');
-    threadEl.innerHTML = `
-        <div class="mb-2">
-            <div class="d-flex justify-content-between mb-1" style="font-size:11px;">
-                <strong class="text-danger">${tkt.customer} (User)</strong>
-                <span class="text-muted">${tkt.date}</span>
-            </div>
-            <div style="font-size:12.5px; background:rgba(220,53,69,0.04); color:var(--rdr-text); padding:8px 12px; border-radius:6px; display:inline-block; max-width:85%;">${tkt.message}</div>
-        </div>
-    `;
-    
-    tkt.replies.forEach(r => {
-        const aligns = r.sender_role === 'Agent' ? 'align-self-end text-end' : '';
-        const senderColor = r.sender_role === 'Agent' ? 'color:var(--rdr-teal)' : 'color:var(--rdr-red)';
-        const bg = r.sender_role === 'Agent' ? 'background:rgba(23,162,184,0.08)' : 'background:rgba(220,53,69,0.04)';
-        
-        threadEl.innerHTML += `
-            <div class="mb-2 ${aligns}" style="width: 100%;">
-                <div class="d-flex justify-content-between mb-1" style="font-size:11px;">
-                    <span class="text-muted">${r.time}</span>
-                    <strong style="${senderColor}">${r.sender_name} (${r.sender_role})</strong>
-                </div>
-                <div style="font-size:12.5px; ${bg}; color:var(--rdr-text); padding:8px 12px; border-radius:6px; text-align:left; display:inline-block; max-width:85%;">${r.text}</div>
-            </div>
-        `;
-    });
-    
-    threadEl.scrollTop = threadEl.scrollHeight;
-}
-
-async function submitDetailTicketReply() {
-    const text = document.getElementById('detailReplyTextarea').value.trim();
-    if (!text) { alert('Please enter a response.'); return; }
-    
-    try {
-        const res = await fetch(`http://localhost:8085/api/tickets/${currentTicketId}/reply`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ message: text })
-        });
-        if (res.ok) {
-            document.getElementById('detailReplyTextarea').value = '';
-            await loadTickets();
-        } else {
-            alert('Failed to submit reply.');
-        }
-    } catch(err) {
-        console.error(err);
-    }
-}
-
-async function updateDetailTicketStatus() {
-    if (!currentTicketId) return;
-    const status = document.getElementById('detailStatusSelect').value;
-    try {
-        const res = await fetch(`http://localhost:8085/api/tickets/${currentTicketId}/status`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ status: status })
-        });
-        if (res.ok) {
-            await loadTickets();
-        } else {
-            alert('Failed to update status.');
-        }
-    } catch(err) {
-        console.error(err);
-    }
-}
-
-async function updateDetailTicketPriority() {
-    if (!currentTicketId) return;
-    const priority = document.getElementById('detailPrioritySelect').value;
-    try {
-        const res = await fetch(`http://localhost:8085/api/tickets/${currentTicketId}/priority`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ priority: priority })
-        });
-        if (res.ok) {
-            await loadTickets();
-        } else {
-            alert('Failed to update priority.');
-        }
-    } catch(err) {
-        console.error(err);
-    }
-}
-
-function openCreateTicketMock() {
-    document.getElementById('newTicketSubject').value = '';
-    document.getElementById('newTicketMessage').value = '';
-    const modal = new bootstrap.Modal(document.getElementById('createTicketModal'));
-    modal.show();
-}
-
-async function submitCreateTicketMock() {
-    const customer = document.getElementById('newTicketCustomer').value.trim();
-    const email = document.getElementById('newTicketEmail').value.trim();
-    const subject = document.getElementById('newTicketSubject').value.trim();
-    const category = document.getElementById('newTicketCategory').value;
-    const priority = document.getElementById('newTicketPriority').value;
-    const message = document.getElementById('newTicketMessage').value.trim();
-
-    if (!subject || !message || !email) { alert('Please enter email, subject and message.'); return; }
-
-    try {
-        const res = await fetch('http://localhost:8085/api/tickets', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                customer_name: customer,
-                customer_email: email,
-                subject: subject,
-                category: category,
-                priority: priority,
-                description: message
-            })
-        });
-        if (res.ok) {
-            const json = await res.json();
-            const ticketId = json.ticket_id;
-            
-            const modalEl = document.getElementById('createTicketModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
-            
-            alert(`Ticket #${ticketId} created successfully!`);
-            await loadTickets();
-            selectTicket(ticketId);
-        } else {
-            alert('Failed to create ticket.');
-        }
-    } catch(err) {
-        console.error(err);
-    }
-}
 
 // --- SANDBOX TEST SEARCH ---
 async function runSandboxQuery() {
@@ -1597,12 +1250,13 @@ async function runSandboxQuery() {
 }
 
 // --- FILE DRAG & DROP HANDLERS ---
+let selectedUploadFile = null;
 function handleDragOver(e){e.preventDefault();e.currentTarget.classList.add('dragover');}
 function handleDragLeave(e){e.currentTarget.classList.remove('dragover');}
-function handleDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(e.dataTransfer.files.length)showFile(e.dataTransfer.files[0]);}
-function handleFileSelect(input){if(input.files.length)showFile(input.files[0]);}
+function handleDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');if(e.dataTransfer.files.length){selectedUploadFile = e.dataTransfer.files[0];showFile(selectedUploadFile);}}
+function handleFileSelect(input){if(input.files.length){selectedUploadFile = input.files[0];showFile(selectedUploadFile);}}
 function showFile(file){document.getElementById('fileName').textContent=file.name;document.getElementById('fileSize').textContent=(file.size/1024/1024).toFixed(2)+' MB';document.getElementById('filePreview').style.display='block';document.getElementById('uploadZone').style.display='none';}
-function clearFile(){document.getElementById('filePreview').style.display='none';document.getElementById('uploadZone').style.display='block';document.getElementById('fileInput').value='';}
+function clearFile(){document.getElementById('filePreview').style.display='none';document.getElementById('uploadZone').style.display='block';document.getElementById('fileInput').value='';selectedUploadFile = null;}
 function toggleSqlPreview(){document.getElementById('sqlPreview').style.display=document.getElementById('showSqlToggle').checked?'block':'none';}
 
 // --- SYSTEM CONFIG (Dynamic AI config loading) ---
@@ -1638,8 +1292,36 @@ async function loadAiConfig() {
                 if(document.getElementById('escRateAlertInput')) document.getElementById('escRateAlertInput').value = data.escalation_rate_alert;
                 if(document.getElementById('respTimeAlertInput')) document.getElementById('respTimeAlertInput').value = data.response_time_alert;
                 if(document.getElementById('emailAlertsInput')) document.getElementById('emailAlertsInput').checked = data.email_alerts;
+                if(document.getElementById('takeoverWaitInput')) document.getElementById('takeoverWaitInput').value = data.takeover_wait_timeout_minutes || 10;
                 if(document.getElementById('fallbackPromptInput')) document.getElementById('fallbackPromptInput').value = data.fallback_message;
                 if(document.getElementById('escalatePromptInput')) document.getElementById('escalatePromptInput').value = data.escalation_message;
+
+                // Load HNSW parameters
+                if(document.getElementById('hnswMInput')) {
+                    document.getElementById('hnswMInput').value = data.mhnsw_default_m || 6;
+                    document.getElementById('hnswMVal').textContent = data.mhnsw_default_m || 6;
+                }
+                if(document.getElementById('hnswEfInput')) {
+                    document.getElementById('hnswEfInput').value = data.mhnsw_ef_search || 20;
+                    document.getElementById('hnswEfVal').textContent = data.mhnsw_ef_search || 20;
+                }
+                if(document.getElementById('hnswCacheVal')) {
+                    document.getElementById('hnswCacheVal').value = data.mhnsw_max_cache_size || 512;
+                }
+                if(document.getElementById('hnswDistanceInput')) {
+                    document.getElementById('hnswDistanceInput').value = data.mhnsw_default_distance || 'cosine';
+                }
+                if(document.getElementById('hnswStatusCount')) {
+                    document.getElementById('hnswStatusCount').textContent = (data.hnsw_indexed_vectors || 0).toLocaleString();
+                }
+                if(document.getElementById('hnswStatusDimensions')) {
+                    document.getElementById('hnswStatusDimensions').textContent = "3072";
+                }
+                if(document.getElementById('hnswStatusMemory')) {
+                    const bytesPerVector = 3072 * 4; // float32
+                    const totalBytes = (data.hnsw_indexed_vectors || 0) * bytesPerVector;
+                    document.getElementById('hnswStatusMemory').textContent = "~" + (totalBytes / (1024 * 1024)).toFixed(1) + " MB";
+                }
             }
         }
     } catch(err) { console.error('Error loading config', err); }
@@ -1658,7 +1340,12 @@ async function saveAiConfig() {
         temperature: parseFloat(document.getElementById('temperatureInput')?.value || 0.2),
         escalation_rate_alert: parseInt(document.getElementById('escRateAlertInput')?.value || 20),
         response_time_alert: parseInt(document.getElementById('respTimeAlertInput')?.value || 5),
-        email_alerts: document.getElementById('emailAlertsInput')?.checked
+        email_alerts: document.getElementById('emailAlertsInput')?.checked,
+        takeover_wait_timeout_minutes: parseInt(document.getElementById('takeoverWaitInput')?.value || 10),
+        mhnsw_default_m: parseInt(document.getElementById('hnswMInput')?.value || 6),
+        mhnsw_ef_search: parseInt(document.getElementById('hnswEfInput')?.value || 20),
+        mhnsw_max_cache_size: parseInt(document.getElementById('hnswCacheVal')?.value || 512),
+        mhnsw_default_distance: document.getElementById('hnswDistanceInput')?.value || 'cosine'
     };
     try {
         const res = await fetch('http://localhost:8085/config/ai', {
@@ -1669,6 +1356,9 @@ async function saveAiConfig() {
         const json = await res.json();
         if(json.status === 'success') {
             alert('Settings saved dynamically! AI Engine updated.');
+            if(window.activePage === 'prompt') {
+                loadPromptHistory();
+            }
         } else {
             alert('Failed to save settings: ' + json.message);
         }
@@ -1679,11 +1369,14 @@ async function saveAiConfig() {
 }
 
 // --- KNOWLEDGE BASE ---
+let cachedKBdocs = [];
+
 async function loadKnowledgeBase() {
     try {
         const response = await fetch('http://localhost:8085/knowledge');
         if (!response.ok) throw new Error('Failed to fetch knowledge base');
         const docs = await response.json();
+        cachedKBdocs = docs;
         
         const tbody = document.getElementById('kbTableBody');
         if (!tbody) return;
@@ -1695,31 +1388,235 @@ async function loadKnowledgeBase() {
             const date = new Date(doc.updated_at || doc.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
             
             let catBadgeClass = 'badge-active';
-            if (doc.category === 'Protection' || doc.category === 'Protection Plans') catBadgeClass = 'badge-processing';
+            if (doc.category === 'Protection Plans' || doc.category === 'Protection') catBadgeClass = 'badge-processing';
             if (doc.category === 'Cancellation') catBadgeClass = 'badge-medium';
-            if (doc.category === 'Vehicle' || doc.category === 'Vehicle Standards') catBadgeClass = 'badge-low';
+            if (doc.category === 'Vehicle Standards' || doc.category === 'Vehicle') catBadgeClass = 'badge-low';
+            if (doc.category === 'Account FAQ' || doc.category === 'Account') catBadgeClass = 'badge-high';
             
             let statusBadge = '<span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span>';
             if (doc.status === 'processing' || doc.status === 'Processing') statusBadge = '<span class="badge-status badge-processing"><i class="bi bi-arrow-repeat me-1"></i>Processing</span>';
             if (doc.status === 'archived' || doc.status === 'Archived') statusBadge = '<span class="badge-status badge-archived"><i class="bi bi-archive-fill me-1"></i>Archived</span>';
+            if (doc.status === 'error' || doc.status === 'Error') statusBadge = '<span class="badge-status badge-high"><i class="bi bi-exclamation-octagon-fill me-1"></i>Error</span>';
+            
+            let tagsHtml = '';
+            if (doc.tags && doc.tags.length > 0) {
+                tagsHtml = '<div class="mt-1">' + doc.tags.map(t => `<span class="badge bg-light text-dark border me-1" style="font-size:10px;font-weight:500;padding:2px 6px;">${t}</span>`).join('') + '</div>';
+            }
             
             tr.innerHTML = `
-                <td><i class="bi bi-file-earmark-pdf-fill me-2" style="color:#DC3545;"></i><b>${doc.title}</b></td>
+                <td><i class="bi bi-file-earmark-text-fill me-2" style="color:var(--rdr-teal);"></i><b>${doc.title}</b>${tagsHtml}</td>
                 <td><span class="badge-status ${catBadgeClass}">${doc.category || 'General FAQ'}</span></td>
                 <td>${doc.version || '1.0'}</td>
-                <td>${doc.file_size_bytes ? (doc.file_size_bytes / 1024).toFixed(1) + ' KB' : 'N/A'}</td>
+                <td>${doc.file_size_bytes ? (doc.file_size_bytes / 1024).toFixed(1) + ' KB' : '0.0 KB'}</td>
                 <td>${date}</td>
                 <td>${statusBadge}</td>
                 <td style="text-align:right;">
-                    <button class="btn btn-sm btn-outline-secondary" title="View"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-sm btn-outline-secondary" title="Edit" onclick="openEditKB(${doc.document_id})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-rdr" title="Download (.txt)" onclick="downloadKB(${doc.document_id}, '${doc.file_name.replace(/'/g, "\\'")}')"><i class="bi bi-download"></i></button>
                     <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteDocument(${doc.document_id})"><i class="bi bi-trash3"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+        
+        await populateCategoryDropdowns();
     } catch (e) {
         console.error('Error loading knowledge base:', e);
     }
+}
+
+async function filterKbTable() {
+    const searchVal = document.getElementById('kbSearchInput').value.toLowerCase();
+    const catFilter = document.getElementById('kbCategoryFilter').value;
+    const statFilter = document.getElementById('kbStatusFilter').value;
+    
+    const tbody = document.getElementById('kbTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    cachedKBdocs.forEach(doc => {
+        const titleMatch = doc.title.toLowerCase().includes(searchVal) || doc.file_name.toLowerCase().includes(searchVal);
+        const catMatch = catFilter === 'All' || doc.category === catFilter;
+        const statMatch = statFilter === 'All' || doc.status.toLowerCase() === statFilter.toLowerCase();
+        
+        if (titleMatch && catMatch && statMatch) {
+            const tr = document.createElement('tr');
+            const date = new Date(doc.updated_at || doc.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            
+            let catBadgeClass = 'badge-active';
+            if (doc.category === 'Protection Plans' || doc.category === 'Protection') catBadgeClass = 'badge-processing';
+            if (doc.category === 'Cancellation') catBadgeClass = 'badge-medium';
+            if (doc.category === 'Vehicle Standards' || doc.category === 'Vehicle') catBadgeClass = 'badge-low';
+            if (doc.category === 'Account FAQ' || doc.category === 'Account') catBadgeClass = 'badge-high';
+            
+            let statusBadge = '<span class="badge-status badge-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span>';
+            if (doc.status === 'processing' || doc.status === 'Processing') statusBadge = '<span class="badge-status badge-processing"><i class="bi bi-arrow-repeat me-1"></i>Processing</span>';
+            if (doc.status === 'archived' || doc.status === 'Archived') statusBadge = '<span class="badge-status badge-archived"><i class="bi bi-archive-fill me-1"></i>Archived</span>';
+            if (doc.status === 'error' || doc.status === 'Error') statusBadge = '<span class="badge-status badge-high"><i class="bi bi-exclamation-octagon-fill me-1"></i>Error</span>';
+            
+            let tagsHtml = '';
+            if (doc.tags && doc.tags.length > 0) {
+                tagsHtml = '<div class="mt-1">' + doc.tags.map(t => `<span class="badge bg-light text-dark border me-1" style="font-size:10px;font-weight:500;padding:2px 6px;">${t}</span>`).join('') + '</div>';
+            }
+            
+            tr.innerHTML = `
+                <td><i class="bi bi-file-earmark-text-fill me-2" style="color:var(--rdr-teal);"></i><b>${doc.title}</b>${tagsHtml}</td>
+                <td><span class="badge-status ${catBadgeClass}">${doc.category || 'General FAQ'}</span></td>
+                <td>${doc.version || '1.0'}</td>
+                <td>${doc.file_size_bytes ? (doc.file_size_bytes / 1024).toFixed(1) + ' KB' : '0.0 KB'}</td>
+                <td>${date}</td>
+                <td>${statusBadge}</td>
+                <td style="text-align:right;">
+                    <button class="btn btn-sm btn-outline-secondary" title="Edit" onclick="openEditKB(${doc.document_id})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-rdr" title="Download (.txt)" onclick="downloadKB(${doc.document_id}, '${doc.file_name.replace(/'/g, "\\'")}')"><i class="bi bi-download"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteDocument(${doc.document_id})"><i class="bi bi-trash3"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+    });
+}
+
+async function populateCategoryDropdowns() {
+    try {
+        const res = await fetch('http://localhost:8085/knowledge/categories');
+        if (res.ok) {
+            const categories = await res.json();
+            
+            // Populate document page category filter if it hasn't been populated yet
+            const filterSelect = document.getElementById('kbCategoryFilter');
+            if (filterSelect && filterSelect.options.length <= 1) {
+                categories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.category_name;
+                    opt.textContent = cat.category_name;
+                    filterSelect.appendChild(opt);
+                });
+            }
+            
+            const writerSelect = document.getElementById('writerCategory');
+            const uploadSelect = document.getElementById('kbUploadCategory');
+            
+            let options = '<option value="">Select category...</option>';
+            categories.forEach(cat => {
+                options += `<option value="${cat.category_id}">${cat.category_name}</option>`;
+            });
+            
+            if (writerSelect) writerSelect.innerHTML = options;
+            if (uploadSelect) uploadSelect.innerHTML = options;
+        }
+    } catch (err) {
+        console.error('Error fetching categories:', err);
+    }
+}
+
+function openCreateKB() {
+    document.getElementById('writerDocId').value = '';
+    document.getElementById('writerTitle').value = '';
+    document.getElementById('writerVersion').value = '1.0';
+    document.getElementById('writerTags').value = '';
+    document.getElementById('writerSourceText').value = '';
+    document.getElementById('writerHeaderTitle').innerHTML = `<i class="bi bi-pencil-square me-2" style="color:var(--rdr-teal)"></i>Create Knowledge Base Document`;
+    populateCategoryDropdowns();
+    switchPage('writer');
+}
+
+async function openEditKB(id) {
+    try {
+        const res = await fetch(`http://localhost:8085/knowledge/${id}`);
+        if (res.ok) {
+            const doc = await res.json();
+            document.getElementById('writerDocId').value = doc.document_id;
+            document.getElementById('writerTitle').value = doc.title;
+            document.getElementById('writerVersion').value = doc.version;
+            document.getElementById('writerTags').value = (doc.tags || []).join(', ');
+            document.getElementById('writerSourceText').value = doc.source_text || '';
+            document.getElementById('writerHeaderTitle').innerHTML = `<i class="bi bi-pencil-square me-2" style="color:var(--rdr-teal)"></i>Edit Knowledge Base Document: ${doc.title}`;
+            await populateCategoryDropdowns();
+            document.getElementById('writerCategory').value = doc.category_id;
+            switchPage('writer');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Failed to load document for editing.');
+    }
+}
+
+async function saveKB() {
+    const id = document.getElementById('writerDocId').value;
+    const title = document.getElementById('writerTitle').value.trim();
+    const categoryId = document.getElementById('writerCategory').value;
+    const version = document.getElementById('writerVersion').value.trim();
+    const tagsVal = document.getElementById('writerTags').value;
+    const text = document.getElementById('writerSourceText').value.trim();
+    
+    if (!title || !categoryId || !version || !text) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+    
+    const tagsList = tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+    
+    const payload = {
+        document_id: id ? parseInt(id) : null,
+        category_id: parseInt(categoryId),
+        title: title,
+        source_text: text,
+        version: version,
+        tags: tagsList
+    };
+    
+    try {
+        const res = await fetch('http://localhost:8085/knowledge', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            alert(id ? 'Knowledge base updated successfully!' : 'New knowledge base created successfully!');
+            switchPage('documents');
+            loadKnowledgeBase();
+        } else {
+            alert('Failed to save document.');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error saving document.');
+    }
+}
+
+async function downloadKB(id, filename) {
+    try {
+        const res = await fetch(`http://localhost:8085/knowledge/${id}`);
+        if (res.ok) {
+            const doc = await res.json();
+            const text = doc.source_text || '';
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            let dlName = filename;
+            if (!dlName.toLowerCase().endsWith('.txt')) {
+                const dotIdx = dlName.lastIndexOf('.');
+                dlName = (dotIdx !== -1 ? dlName.substring(0, dotIdx) : dlName) + '.txt';
+            }
+            
+            a.download = dlName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Failed to download document.');
+    }
+}
+
+function bulkExport() {
+    window.location.href = 'http://localhost:8085/knowledge/export/zip';
 }
 
 async function deleteDocument(id) {
@@ -1738,48 +1635,363 @@ async function deleteDocument(id) {
 }
 
 async function uploadDocument() {
-    const title = document.getElementById('kbUploadTitle').value;
-    const category = document.getElementById('kbUploadCategory').value;
-    const version = document.getElementById('kbUploadVersion').value;
-    const fileInput = document.getElementById('fileInput');
+    const title = document.getElementById('kbUploadTitle').value.trim();
+    const categoryId = document.getElementById('kbUploadCategory').value;
+    const version = document.getElementById('kbUploadVersion').value.trim();
+    const tagsVal = document.getElementById('kbUploadTags').value;
     
-    if (!title || !category || !version || fileInput.files.length === 0) {
+    if (!title || !categoryId || !version || !selectedUploadFile) {
         alert("Please fill in the title, category, version, and select a file.");
         return;
     }
     
-    const file = fileInput.files[0];
-    const text = "Simulated text content extracted from " + file.name;
+    const file = selectedUploadFile;
+    if (!file.name.toLowerCase().endsWith('.txt')) {
+        alert("Only plain text files (.txt) are supported.");
+        return;
+    }
+    
+    const tagsList = tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const textContent = e.target.result;
+        
+        const payload = {
+            title: title,
+            category_id: parseInt(categoryId),
+            version: version,
+            source_text: textContent,
+            file_name: file.name,
+            tags: tagsList
+        };
+        
+        try {
+            const response = await fetch('http://localhost:8085/knowledge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (response.ok) {
+                alert('Knowledge base uploaded and indexed successfully!');
+                document.getElementById('kbUploadTitle').value = '';
+                document.getElementById('kbUploadCategory').value = '';
+                document.getElementById('kbUploadVersion').value = '1.0';
+                document.getElementById('kbUploadTags').value = '';
+                clearFile();
+                switchPage('documents');
+                loadKnowledgeBase();
+            } else {
+                alert('Upload failed.');
+            }
+        } catch (err) {
+            console.error('Error uploading:', err);
+            alert('An error occurred during upload.');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// --- CATEGORIES & TAGS MANAGEMENT ---
+async function loadCategoriesPage() {
+    try {
+        const res = await fetch('http://localhost:8085/knowledge/categories');
+        if (res.ok) {
+            const categories = await res.json();
+            const tbody = document.getElementById('categoriesTableBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                categories.forEach(cat => {
+                    const tr = document.createElement('tr');
+                    
+                    let actionsHtml = `
+                        <button class="btn btn-sm btn-outline-secondary" title="Edit" onclick="openEditCategory(${cat.category_id}, '${cat.category_name.replace(/'/g, "\\'")}', ${cat.priority_boost}, '${cat.color_hex}', '${(cat.description || '').replace(/'/g, "\\'")}')"><i class="bi bi-pencil"></i></button>
+                    `;
+                    if (cat.category_id !== 5) {
+                        actionsHtml += ` <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteCategory(${cat.category_id})"><i class="bi bi-trash3"></i></button>`;
+                    }
+                    
+                    tr.innerHTML = `
+                        <td>
+                            <span class="d-inline-block rounded-circle me-2" style="width:10px;height:10px;background:${cat.color_hex};"></span>
+                            <b>${cat.category_name}</b>
+                            ${cat.description ? `<br><small class="text-muted">${cat.description}</small>` : ''}
+                        </td>
+                        <td>${cat.document_count || 0}</td>
+                        <td>${cat.chunk_count || 0}</td>
+                        <td><span class="badge bg-light text-dark border">+${(cat.priority_boost || 0).toFixed(2)}</span></td>
+                        <td style="text-align:right;">${actionsHtml}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+    } catch(err) {
+        console.error('Error loading categories:', err);
+    }
+    
+    // Also load tags list
+    await loadTagsList();
+}
+
+function openAddCategory() {
+    document.getElementById('categoryModalTitle').textContent = "Add New Category";
+    document.getElementById('catModalId').value = "";
+    document.getElementById('catModalName').value = "";
+    document.getElementById('catModalBoost').value = "0.00";
+    document.getElementById('catModalColor').value = "#2E75B6";
+    document.getElementById('catModalDesc').value = "";
+    document.getElementById('catModalSaveBtn').textContent = "Create Category";
+}
+
+function openEditCategory(id, name, boost, color, desc) {
+    document.getElementById('categoryModalTitle').textContent = "Edit Category";
+    document.getElementById('catModalId').value = id;
+    document.getElementById('catModalName').value = name;
+    document.getElementById('catModalBoost').value = boost;
+    document.getElementById('catModalColor').value = color;
+    document.getElementById('catModalDesc').value = desc;
+    document.getElementById('catModalSaveBtn').textContent = "Save Changes";
+    
+    const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
+    modal.show();
+}
+
+async function saveCategory() {
+    const id = document.getElementById('catModalId').value;
+    const name = document.getElementById('catModalName').value.trim();
+    const boost = document.getElementById('catModalBoost').value;
+    const color = document.getElementById('catModalColor').value;
+    const desc = document.getElementById('catModalDesc').value.trim();
+    
+    if (!name) {
+        alert("Please enter a category name.");
+        return;
+    }
     
     const payload = {
-        title: title,
-        category: category,
-        version: version,
-        source_text: text,
-        file_name: file.name
+        category_name: name,
+        description: desc || "",
+        priority_boost: parseFloat(boost || 0.0),
+        color_hex: color || "#2E75B6"
     };
     
+    const url = id ? `http://localhost:8085/knowledge/categories/${id}` : 'http://localhost:8085/knowledge/categories';
+    const method = id ? 'PUT' : 'POST';
+    
     try {
-        const response = await fetch('http://localhost:8085/knowledge', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const res = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
         });
-        
-        if (response.ok) {
-            alert('Document uploaded successfully!');
-            document.getElementById('kbUploadTitle').value = '';
-            document.getElementById('kbUploadCategory').value = '';
-            document.getElementById('kbUploadVersion').value = '';
-            clearFile();
-            switchPage('documents', document.querySelector('[data-page=documents]'));
+        if (res.ok) {
+            alert(id ? 'Category updated successfully!' : 'Category created successfully!');
+            await loadCategoriesPage();
+        } else {
+            const errJson = await res.json();
+            alert('Failed to save category: ' + (errJson.detail || 'unknown error'));
+        }
+    } catch(err) {
+        console.error(err);
+        alert('Error saving category.');
+    }
+}
+
+async function deleteCategory(id) {
+    if (!confirm('Are you sure you want to delete this category? Any documents in this category will be automatically reassigned to Account FAQ.')) {
+        return;
+    }
+    try {
+        const res = await fetch(`http://localhost:8085/knowledge/categories/${id}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) {
+            alert('Category deleted successfully.');
+            await loadCategoriesPage();
+        } else {
+            alert('Failed to delete category.');
+        }
+    } catch(err) {
+        console.error(err);
+        alert('Error deleting category.');
+    }
+}
+
+async function loadTagsList() {
+    try {
+        const res = await fetch('http://localhost:8085/knowledge/tags');
+        if (res.ok) {
+            const tags = await res.json();
+            const container = document.getElementById('tagsContainer');
+            if (container) {
+                container.innerHTML = '';
+                if (tags.length === 0) {
+                    container.innerHTML = '<div class="text-muted" style="font-size:12px;padding:8px 0;">No tags defined.</div>';
+                    return;
+                }
+                tags.forEach(t => {
+                    const span = document.createElement('span');
+                    span.className = 'badge bg-light text-dark border m-1 p-2 d-inline-flex align-items-center';
+                    span.style.fontSize = '12px';
+                    span.innerHTML = `
+                        ${t.tag_name}
+                        <i class="bi bi-x ms-2 text-danger" onclick="deleteTag(${t.tag_id})" style="cursor:pointer;font-size:14px;" title="Delete tag"></i>
+                    `;
+                    container.appendChild(span);
+                });
+            }
+        }
+    } catch(err) {
+        console.error('Error loading tags:', err);
+    }
+}
+
+async function addTag() {
+    const input = document.getElementById('newTagNameInput');
+    const name = input.value.trim();
+    if (!name) return;
+    
+    try {
+        const res = await fetch('http://localhost:8085/knowledge/tags', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ tag_name: name })
+        });
+        if (res.ok) {
+            input.value = '';
+            await loadTagsList();
+        } else {
+            const err = await res.json();
+            alert('Failed to add tag: ' + (err.detail || 'unknown error'));
+        }
+    } catch(err) {
+        console.error(err);
+        alert('Error adding tag.');
+    }
+}
+
+async function deleteTag(id) {
+    if (!confirm('Are you sure you want to delete this tag? It will be removed from all associated documents.')) {
+        return;
+    }
+    try {
+        const res = await fetch(`http://localhost:8085/knowledge/tags/${id}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) {
+            await loadTagsList();
             loadKnowledgeBase();
         } else {
-            alert('Upload failed.');
+            alert('Failed to delete tag.');
         }
-    } catch (e) {
-        console.error('Error uploading:', e);
-        alert('An error occurred during upload.');
+    } catch(err) {
+        console.error(err);
+        alert('Error deleting tag.');
+    }
+}
+
+// --- PROMPT VERSION HISTORY ---
+let cachedPromptTemplates = [];
+
+async function loadPromptHistory() {
+    try {
+        const res = await fetch('http://localhost:8085/config/prompt/history');
+        if (res.ok) {
+            const data = await res.json();
+            cachedPromptTemplates = data;
+            const promptHistoryList = document.getElementById('promptHistoryList');
+            if (!promptHistoryList) return;
+            promptHistoryList.innerHTML = '';
+            
+            if (data.length === 0) {
+                promptHistoryList.innerHTML = '<div class="text-muted text-center" style="font-size:12px;padding:12px 0;">No prompt history found.</div>';
+                return;
+            }
+            
+            data.forEach(t => {
+                const isCurrent = t.is_active;
+                const bulletColor = isCurrent ? 'var(--rdr-green)' : 'var(--rdr-muted)';
+                const dateStr = t.created_at ? new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown';
+                
+                let keyName = 'System Instructions';
+                if (t.template_key === 'fallback_message') keyName = 'Fallback Message';
+                if (t.template_key === 'escalation_message') keyName = 'Escalation Message';
+                
+                const item = document.createElement('div');
+                item.className = 'd-flex align-items-start gap-2 mb-3 pb-3';
+                item.style.borderBottom = '1px solid #F1F5F9';
+                
+                const shortText = t.template_text ? t.template_text.replace(/\s+/g, ' ').substring(0, 40) + '...' : '';
+                
+                item.innerHTML = `
+                    <div style="width:6px;height:6px;border-radius:50%;background:${bulletColor};flex-shrink:0;margin-top:6px;"></div>
+                    <div style="font-size:12px;flex-grow:1;">
+                        <div class="d-flex justify-content-between">
+                            <b>${keyName} (v${t.version})</b>
+                            <span class="text-muted" style="font-size:10px;">${t.created_by}</span>
+                        </div>
+                        <div style="color:var(--rdr-muted);margin:2px 0;">${dateStr}</div>
+                        <span style="color:var(--rdr-muted);font-family:monospace;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;font-size:10px;">${shortText}</span>
+                        <div class="mt-2 d-flex gap-2">
+                            <button class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:10px;height:20px;" onclick="previewPrompt(${t.template_id})">Preview</button>
+                            ${!isCurrent ? `<button class="btn btn-xs btn-outline-rdr py-0 px-2" style="font-size:10px;height:20px;" onclick="rollbackPrompt(${t.template_id})">Rollback</button>` : `<span class="text-success" style="font-size:10px;line-height:20px;font-weight:600;"><i class="bi bi-check2-circle"></i> Active</span>`}
+                        </div>
+                    </div>
+                `;
+                promptHistoryList.appendChild(item);
+            });
+        }
+    } catch(err) {
+        console.error('Error loading prompt history:', err);
+    }
+}
+
+function previewPrompt(templateId) {
+    const t = cachedPromptTemplates.find(x => x.template_id === templateId);
+    if (!t) return;
+    
+    if (t.template_key === 'system_prompt') {
+        const el = document.getElementById('sysPromptInput');
+        if (el) el.value = t.template_text;
+    } else if (t.template_key === 'fallback_message') {
+        const el = document.getElementById('fallbackPromptInput');
+        if (el) el.value = t.template_text;
+    } else if (t.template_key === 'escalation_message') {
+        const el = document.getElementById('escalatePromptInput');
+        if (el) el.value = t.template_text;
+    }
+    alert(`Loaded v${t.version} text into the editor. Press "Save Behavior" to commit.`);
+}
+
+async function rollbackPrompt(templateId) {
+    const t = cachedPromptTemplates.find(x => x.template_id === templateId);
+    if (!t) return;
+    
+    let keyName = 'System Instructions';
+    if (t.template_key === 'fallback_message') keyName = 'Fallback Message';
+    if (t.template_key === 'escalation_message') keyName = 'Escalation Message';
+    
+    if (!confirm(`Are you sure you want to rollback ${keyName} to version ${t.version}?`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`http://localhost:8085/config/prompt/rollback/${templateId}`, {
+            method: 'POST'
+        });
+        if (res.ok) {
+            const json = await res.json();
+            alert(json.message || 'Rollback successful!');
+            await loadPromptHistory();
+            await loadAiConfig();
+        } else {
+            alert('Rollback failed.');
+        }
+    } catch(err) {
+        console.error(err);
+        alert('Error performing rollback.');
     }
 }
 

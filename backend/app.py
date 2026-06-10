@@ -145,6 +145,7 @@ from database import get_db, AsyncSession
 from fastapi import Depends, BackgroundTasks
 from pydantic import BaseModel
 from rag_pipeline import process_document_background
+from typing import Optional, List
 
 class KnowledgeUpdateRequest(BaseModel):
     document_id: int
@@ -169,35 +170,54 @@ async def update_knowledge_base(
     return {"status": "processing", "document_id": request.document_id, "message": "Document chunking and embedding started in background."}
 
 class DocumentCreateRequest(BaseModel):
-    document_id: int = None
+    document_id: Optional[int] = None
+    category_id: Optional[int] = None
     title: str
     source_text: str
-    file_name: str = None
+    file_name: Optional[str] = None
     version: str = "1.0"
+    tags: Optional[List[str]] = None
 
 @app.get("/knowledge", tags=["Knowledge Base"])
 async def list_knowledge_documents(db: AsyncSession = Depends(get_db)):
     """
     Exposes all policy documents stored in the database for the Admin Panel list view.
     """
-    from database import KbDocument
+    from database import KbDocument, KbCategory, KbTag, KbDocumentTag
     from sqlalchemy import select
     
-    result = await db.execute(select(KbDocument).order_by(KbDocument.created_at.desc()))
-    documents = result.scalars().all()
+    # Fetch tags for all documents
+    tags_res = await db.execute(
+        select(KbDocumentTag.document_id, KbTag.tag_name)
+        .join(KbTag, KbDocumentTag.tag_id == KbTag.tag_id)
+    )
+    doc_tags_map = {}
+    for doc_id, tag_name in tags_res.all():
+        if doc_id not in doc_tags_map:
+            doc_tags_map[doc_id] = []
+        doc_tags_map[doc_id].append(tag_name)
+        
+    result = await db.execute(
+        select(KbDocument, KbCategory.category_name)
+        .join(KbCategory, KbDocument.category_id == KbCategory.category_id, isouter=True)
+        .order_by(KbDocument.created_at.desc())
+    )
+    rows = result.all()
     
     return [
         {
             "document_id": doc.document_id,
             "category_id": doc.category_id,
+            "category": cat_name or "General FAQ",
             "title": doc.title,
             "file_name": doc.file_name,
             "file_size_bytes": doc.file_size_bytes,
             "version": doc.version,
             "status": doc.status,
+            "tags": doc_tags_map.get(doc.document_id, []),
             "updated_at": doc.updated_at.isoformat() if doc.updated_at else None
         }
-        for doc in documents
+        for doc, cat_name in rows
     ]
 
 @app.post("/knowledge", tags=["Knowledge Base"])
@@ -214,7 +234,10 @@ async def create_or_update_document(
     from sqlalchemy import select
     
     doc_id = request.document_id
+    category_id = request.category_id or 5
     file_name = request.file_name or f"{request.title.replace(' ', '_').lower()}.txt"
+    if not file_name.endswith(".txt"):
+        file_name = file_name.rsplit(".", 1)[0] + ".txt"
     
     if doc_id:
         result = await db.execute(select(KbDocument).where(KbDocument.document_id == doc_id))
@@ -223,6 +246,7 @@ async def create_or_update_document(
             return {"status": "error", "message": f"Document ID {doc_id} not found."}
             
         db_doc.title = request.title
+        db_doc.category_id = category_id
         db_doc.file_name = file_name
         db_doc.version = request.version
         db_doc.status = 'processing'
@@ -231,7 +255,7 @@ async def create_or_update_document(
         await db.commit()
     else:
         db_doc = KbDocument(
-            category_id=5,
+            category_id=category_id,
             title=request.title,
             file_name=file_name,
             file_size_bytes=len(request.source_text.encode('utf-8')),
@@ -244,6 +268,39 @@ async def create_or_update_document(
         await db.commit()
         await db.refresh(db_doc)
         doc_id = db_doc.document_id
+        
+    # Sync document tags
+    if request.tags is not None:
+        from database import KbTag, KbDocumentTag
+        from sqlalchemy import delete
+        try:
+            # 1. Delete existing associations
+            await db.execute(delete(KbDocumentTag).where(KbDocumentTag.document_id == doc_id))
+            await db.commit()
+            
+            # 2. Add new tag links
+            for tname in request.tags:
+                tname_clean = tname.strip().lower()
+                if not tname_clean:
+                    continue
+                
+                # Check if tag exists
+                tag_res = await db.execute(select(KbTag).where(KbTag.tag_name == tname_clean))
+                db_tag = tag_res.scalars().first()
+                if not db_tag:
+                    db_tag = KbTag(tag_name=tname_clean)
+                    db.add(db_tag)
+                    await db.commit()
+                    await db.refresh(db_tag)
+                
+                # Add association
+                doc_tag = KbDocumentTag(document_id=doc_id, tag_id=db_tag.tag_id)
+                db.add(doc_tag)
+            
+            await db.commit()
+        except Exception as tag_err:
+            await db.rollback()
+            print(f"Error syncing tags for document {doc_id}: {tag_err}")
         
     background_tasks.add_task(
         process_document_background, 
@@ -272,7 +329,7 @@ async def delete_knowledge_document(id: int, db: AsyncSession = Depends(get_db))
     if not db_doc:
         return {"status": "error", "message": f"Document ID {id} not found."}
         
-    await db.execute(delete(KbDocument).where(KbDocument.document_id == id))
+    await db.delete(db_doc)
     try:
         await db.commit()
     except Exception as e:
@@ -305,7 +362,7 @@ async def export_knowledge_documents(db: AsyncSession = Depends(get_db)):
 class DocumentImportRequest(BaseModel):
     title: str
     source_text: str
-    file_name: str = None
+    file_name: Optional[str] = None
     version: str = "1.0"
 
 @app.post("/knowledge/import", tags=["Knowledge Base"])
@@ -349,6 +406,317 @@ async def import_knowledge_documents(
         "status": "success",
         "message": f"Successfully imported {len(request)} documents and started vector embeddings in the background.",
         "imported_document_ids": imported_ids
+    }
+
+@app.get("/knowledge/export/zip", tags=["Knowledge Base"])
+async def export_knowledge_documents_zip(db: AsyncSession = Depends(get_db)):
+    """
+    Exposes all knowledge base documents bundled together as a single ZIP of text files.
+    """
+    from database import KbDocument
+    from sqlalchemy import select
+    from fastapi.responses import StreamingResponse
+    import io
+    import zipfile
+    
+    try:
+        result = await db.execute(select(KbDocument).order_by(KbDocument.document_id.asc()))
+        documents = result.scalars().all()
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            for doc in documents:
+                filename = doc.file_name
+                if not filename.endswith(".txt"):
+                    filename = filename.rsplit(".", 1)[0] + ".txt"
+                content = doc.source_text or ""
+                zip_file.writestr(filename, content)
+                
+        zip_buffer.seek(0)
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": "attachment; filename=knowledge_base_export.zip"}
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"status": "error", "message": str(e)}
+
+@app.get("/knowledge/categories", tags=["Knowledge Base"])
+async def list_knowledge_categories(db: AsyncSession = Depends(get_db)):
+    """
+    Retrieve all document categories, with dynamic document and chunk counts.
+    """
+    from database import KbCategory, KbDocument, KbChunkEmbedding
+    from sqlalchemy import select, func
+    
+    result = await db.execute(select(KbCategory).order_by(KbCategory.category_id.asc()))
+    categories = result.scalars().all()
+    
+    output = []
+    for cat in categories:
+        # Count documents in this category
+        doc_count_res = await db.execute(
+            select(func.count(KbDocument.document_id))
+            .where(KbDocument.category_id == cat.category_id)
+        )
+        doc_count = doc_count_res.scalar() or 0
+        
+        # Count chunks in this category
+        chunk_count_res = await db.execute(
+            select(func.count(KbChunkEmbedding.chunk_id))
+            .join(KbDocument, KbChunkEmbedding.document_id == KbDocument.document_id)
+            .where(KbDocument.category_id == cat.category_id)
+        )
+        chunk_count = chunk_count_res.scalar() or 0
+        
+        output.append({
+            "category_id": cat.category_id,
+            "category_name": cat.category_name,
+            "description": cat.description,
+            "priority_boost": float(cat.priority_boost) if cat.priority_boost is not None else 0.0,
+            "color_hex": cat.color_hex or "#2E75B6",
+            "document_count": doc_count,
+            "chunk_count": chunk_count
+        })
+    return output
+
+class CategoryCreateRequest(BaseModel):
+    category_name: str
+    description: Optional[str] = None
+    priority_boost: float = 0.00
+    color_hex: str = "#2E75B6"
+
+class CategoryUpdateRequest(BaseModel):
+    category_name: str
+    description: Optional[str] = None
+    priority_boost: float = 0.00
+    color_hex: str = "#2E75B6"
+
+class TagCreateRequest(BaseModel):
+    tag_name: str
+
+@app.post("/knowledge/categories", tags=["Knowledge Base"])
+async def create_knowledge_category(request: CategoryCreateRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Create a new document category.
+    """
+    from database import KbCategory
+    from sqlalchemy import select
+    
+    # Check if category already exists
+    res = await db.execute(select(KbCategory).where(KbCategory.category_name == request.category_name))
+    existing = res.scalars().first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Category already exists")
+        
+    db_cat = KbCategory(
+        category_name=request.category_name,
+        description=request.description,
+        priority_boost=request.priority_boost,
+        color_hex=request.color_hex,
+        is_active=True
+    )
+    db.add(db_cat)
+    try:
+        await db.commit()
+        await db.refresh(db_cat)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+        
+    return {
+        "status": "success",
+        "category": {
+            "category_id": db_cat.category_id,
+            "category_name": db_cat.category_name,
+            "description": db_cat.description,
+            "priority_boost": float(db_cat.priority_boost) if db_cat.priority_boost else 0.0,
+            "color_hex": db_cat.color_hex
+        }
+    }
+
+@app.put("/knowledge/categories/{category_id}", tags=["Knowledge Base"])
+async def update_knowledge_category(category_id: int, request: CategoryUpdateRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Update an existing document category.
+    """
+    from database import KbCategory
+    from sqlalchemy import select
+    
+    res = await db.execute(select(KbCategory).where(KbCategory.category_id == category_id))
+    db_cat = res.scalars().first()
+    if not db_cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    db_cat.category_name = request.category_name
+    db_cat.description = request.description
+    db_cat.priority_boost = request.priority_boost
+    db_cat.color_hex = request.color_hex
+    
+    try:
+        await db.commit()
+        await db.refresh(db_cat)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+        
+    return {
+        "status": "success",
+        "category": {
+            "category_id": db_cat.category_id,
+            "category_name": db_cat.category_name,
+            "description": db_cat.description,
+            "priority_boost": float(db_cat.priority_boost) if db_cat.priority_boost else 0.0,
+            "color_hex": db_cat.color_hex
+        }
+    }
+
+@app.delete("/knowledge/categories/{category_id}", tags=["Knowledge Base"])
+async def delete_knowledge_category(category_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Delete a document category.
+    """
+    from database import KbCategory, KbDocument
+    from sqlalchemy import select
+    
+    res = await db.execute(select(KbCategory).where(KbCategory.category_id == category_id))
+    db_cat = res.scalars().first()
+    if not db_cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    # Reassign documents in this category to default category 5 (Account FAQ)
+    from sqlalchemy import update
+    await db.execute(update(KbDocument).where(KbDocument.category_id == category_id).values(category_id=5))
+    
+    await db.delete(db_cat)
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+        
+    return {"status": "success", "message": "Category deleted successfully"}
+
+@app.get("/knowledge/tags", tags=["Knowledge Base"])
+async def list_knowledge_tags(db: AsyncSession = Depends(get_db)):
+    """
+    Retrieve all document tags.
+    """
+    from database import KbTag
+    from sqlalchemy import select
+    
+    result = await db.execute(select(KbTag).order_by(KbTag.tag_name.asc()))
+    tags = result.scalars().all()
+    
+    return [
+        {
+            "tag_id": t.tag_id,
+            "tag_name": t.tag_name,
+            "created_at": t.created_at.isoformat() if t.created_at else None
+        }
+        for t in tags
+    ]
+
+@app.post("/knowledge/tags", tags=["Knowledge Base"])
+async def create_knowledge_tag(request: TagCreateRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Create a new tag.
+    """
+    from database import KbTag
+    from sqlalchemy import select
+    
+    tname_clean = request.tag_name.strip().lower()
+    if not tname_clean:
+        raise HTTPException(status_code=400, detail="Tag name cannot be empty")
+        
+    # Check if tag exists
+    res = await db.execute(select(KbTag).where(KbTag.tag_name == tname_clean))
+    existing = res.scalars().first()
+    if existing:
+        return {
+            "status": "success",
+            "tag": {
+                "tag_id": existing.tag_id,
+                "tag_name": existing.tag_name
+            }
+        }
+        
+    db_tag = KbTag(tag_name=tname_clean)
+    db.add(db_tag)
+    try:
+        await db.commit()
+        await db.refresh(db_tag)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+        
+    return {
+        "status": "success",
+        "tag": {
+            "tag_id": db_tag.tag_id,
+            "tag_name": db_tag.tag_name
+        }
+    }
+
+@app.delete("/knowledge/tags/{tag_id}", tags=["Knowledge Base"])
+async def delete_knowledge_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Delete a document tag.
+    """
+    from database import KbTag, KbDocumentTag
+    from sqlalchemy import select, delete
+    
+    res = await db.execute(select(KbTag).where(KbTag.tag_id == tag_id))
+    db_tag = res.scalars().first()
+    if not db_tag:
+        raise HTTPException(status_code=404, detail="Tag not found")
+        
+    # Delete associations first
+    await db.execute(delete(KbDocumentTag).where(KbDocumentTag.tag_id == tag_id))
+    await db.delete(db_tag)
+    
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+        
+    return {"status": "success", "message": "Tag deleted successfully"}
+
+@app.get("/knowledge/{id}", tags=["Knowledge Base"])
+async def get_knowledge_document(id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Retrieve details of a single document by ID (including source_text).
+    """
+    from database import KbDocument, KbTag, KbDocumentTag
+    from sqlalchemy import select
+    
+    result = await db.execute(select(KbDocument).where(KbDocument.document_id == id))
+    doc = result.scalars().first()
+    if not doc:
+        return {"status": "error", "message": f"Document ID {id} not found."}
+        
+    # Fetch tags associated with this document
+    tags_res = await db.execute(
+        select(KbTag.tag_name)
+        .join(KbDocumentTag, KbDocumentTag.tag_id == KbTag.tag_id)
+        .where(KbDocumentTag.document_id == id)
+    )
+    tags = [row[0] for row in tags_res.all()]
+        
+    return {
+        "document_id": doc.document_id,
+        "category_id": doc.category_id,
+        "title": doc.title,
+        "file_name": doc.file_name,
+        "file_size_bytes": doc.file_size_bytes,
+        "version": doc.version,
+        "status": doc.status,
+        "source_text": doc.source_text,
+        "tags": tags,
+        "updated_at": doc.updated_at.isoformat() if doc.updated_at else None
     }
 
 
@@ -911,9 +1279,11 @@ async def get_unanswered_queries(db: AsyncSession = Depends(get_db)):
         for i, r in enumerate(rows):
             output.append({
                 "rank": i + 1,
+                "question_text": r[0],
                 "query": r[0],
                 "times_asked": r[1],
-                "confidence": round(float(r[2]), 2) if r[2] is not None else 0.0
+                "avg_confidence": float(r[2]) if r[2] else 0.0,
+                "confidence": round(float(r[2]), 2) if r[2] else 0.0
             })
         return output
     except Exception as e:
@@ -1014,10 +1384,16 @@ async def takeover_support_session(session_id: str, db: AsyncSession = Depends(g
     return {"status": "success", "message": f"Session {session_id} taken over successfully"}
 
 @app.post("/api/support/sessions/{session_id}/release", tags=["Live Support"])
-async def release_support_session(session_id: str):
+async def release_support_session(session_id: str, db: AsyncSession = Depends(get_db)):
     """
     Releases takeover, switching session state back to bot.
     """
+    try:
+        await db.execute(text("UPDATE chat_sessions SET was_escalated = 0 WHERE session_id = :session_id"), {"session_id": session_id})
+        await db.commit()
+    except Exception as e:
+        print(f"Error resetting session escalation: {e}")
+
     if session_id in manager.active_admin_connections:
         ws = manager.active_admin_connections[session_id]
         await manager.disconnect_admin(ws, session_id)
@@ -1123,22 +1499,206 @@ async def run_sandbox_query_endpoint(request: SandboxRequest, db: AsyncSession =
 from config_service import get_ai_config, update_ai_config
 
 @app.get("/config/ai", tags=["Admin Config"], summary="Get current AI configuration")
-async def fetch_ai_config():
+async def fetch_ai_config(db: AsyncSession = Depends(get_db)):
     """
     Retrieve the current AI settings including prompt templates, 
     confidence thresholds, chunk sizes, and LLM parameters.
+    Also merges native MariaDB HNSW index parameters dynamically.
     """
     config = await get_ai_config()
+    
+    # Fetch mhnsw variables
+    try:
+        hnsw_res = await db.execute(text("SHOW VARIABLES LIKE '%hnsw%'"))
+        for row in hnsw_res.all():
+            var_name = row[0]
+            val = row[1]
+            if var_name == 'mhnsw_max_cache_size':
+                # Convert bytes to MB
+                config[var_name] = int(val) // (1024 * 1024)
+            elif var_name in ('mhnsw_default_m', 'mhnsw_ef_search'):
+                config[var_name] = int(val)
+            else:
+                config[var_name] = val
+    except Exception as e:
+        print(f"Error reading HNSW variables from DB: {e}")
+        
+    # Also fetch vector count
+    try:
+        count_res = await db.execute(text("SELECT COUNT(*) FROM kb_chunk_embeddings WHERE is_active = 1"))
+        config["hnsw_indexed_vectors"] = count_res.scalar() or 0
+    except Exception as e:
+        print(f"Error reading indexed vectors count: {e}")
+        
     return {"status": "success", "data": config}
 
 @app.post("/config/ai", tags=["Admin Config"], summary="Update AI configuration")
-async def save_ai_config(new_config: dict):
+async def save_ai_config(new_config: dict, db: AsyncSession = Depends(get_db)):
     """
     Update the AI settings dynamically. Any changes here will be 
     reflected immediately in the chatbot's RAG pipeline and AI engine.
+    Automatically saves prompt modifications into the prompt_templates version history.
     """
+    from database import PromptTemplate
+    from sqlalchemy import select, update, func
+    
+    # 1. Fetch current config to compare
+    current_config = await get_ai_config()
+    
+    # 2. Check for changes in prompt templates
+    keys_to_check = {
+        "system_prompt": "system_prompt",
+        "fallback_message": "fallback_message",
+        "escalation_message": "escalation_message"
+    }
+    
+    for conf_key, template_key in keys_to_check.items():
+        if conf_key in new_config and new_config[conf_key] != current_config.get(conf_key):
+            new_text = new_config[conf_key]
+            
+            # Find latest version for this template key
+            ver_res = await db.execute(
+                select(func.max(PromptTemplate.version))
+                .where(PromptTemplate.template_key == template_key)
+            )
+            latest_version = ver_res.scalar() or 0
+            new_version = latest_version + 1
+            
+            # Deactivate previous versions
+            await db.execute(
+                update(PromptTemplate)
+                .where(PromptTemplate.template_key == template_key)
+                .values(is_active=False)
+            )
+            
+            # Insert new template version
+            new_tpl = PromptTemplate(
+                template_key=template_key,
+                template_text=new_text,
+                version=new_version,
+                is_active=True,
+                created_by="Admin"
+            )
+            db.add(new_tpl)
+            await db.commit()
+            
+    # 3. Extract and apply HNSW settings if they exist in the payload
+    hnsw_m = new_config.pop("mhnsw_default_m", None)
+    hnsw_ef = new_config.pop("mhnsw_ef_search", None)
+    hnsw_cache = new_config.pop("mhnsw_max_cache_size", None)
+    hnsw_dist = new_config.pop("mhnsw_default_distance", None)
+    
+    if hnsw_m is not None:
+        try:
+            await db.execute(text(f"SET GLOBAL mhnsw_default_m = {int(hnsw_m)}"))
+        except Exception as e:
+            print(f"Error setting mhnsw_default_m: {e}")
+            
+    if hnsw_ef is not None:
+        try:
+            await db.execute(text(f"SET GLOBAL mhnsw_ef_search = {int(hnsw_ef)}"))
+        except Exception as e:
+            print(f"Error setting mhnsw_ef_search: {e}")
+            
+    if hnsw_cache is not None:
+        try:
+            cache_bytes = int(hnsw_cache) * 1024 * 1024
+            await db.execute(text(f"SET GLOBAL mhnsw_max_cache_size = {cache_bytes}"))
+        except Exception as e:
+            print(f"Error setting mhnsw_max_cache_size: {e}")
+            
+    if hnsw_dist is not None:
+        try:
+            dist_clean = str(hnsw_dist).strip().lower()
+            if dist_clean in ('cosine', 'euclidean'):
+                await db.execute(text(f"SET GLOBAL mhnsw_default_distance = '{dist_clean}'"))
+        except Exception as e:
+            print(f"Error setting mhnsw_default_distance: {e}")
+            
+    await db.commit()
+
+    # 4. Save rest of the configurations
     await update_ai_config(new_config)
     return {"status": "success", "message": "AI configuration updated successfully."}
+
+@app.get("/config/prompt/history", tags=["Admin Config"], summary="Get prompt templates version history")
+async def get_prompt_history(db: AsyncSession = Depends(get_db)):
+    """
+    Retrieves the complete prompt templates version history.
+    """
+    from database import PromptTemplate
+    from sqlalchemy import select
+    
+    result = await db.execute(select(PromptTemplate).order_by(PromptTemplate.created_at.desc(), PromptTemplate.version.desc()))
+    templates = result.scalars().all()
+    
+    return [
+        {
+            "template_id": t.template_id,
+            "template_key": t.template_key,
+            "template_text": t.template_text,
+            "version": t.version,
+            "is_active": t.is_active,
+            "created_by": t.created_by or "System Admin",
+            "created_at": t.created_at.isoformat() if t.created_at else None
+        }
+        for t in templates
+    ]
+
+@app.post("/config/prompt/rollback/{template_id}", tags=["Admin Config"], summary="Rollback to a specific prompt version")
+async def rollback_prompt(template_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Rollback to a specific template version by creating a new active version and updating configuration.
+    """
+    from database import PromptTemplate
+    from config_service import get_ai_config, update_ai_config
+    from sqlalchemy import select, update, func
+    from fastapi import HTTPException
+    
+    # 1. Fetch the target template
+    res = await db.execute(select(PromptTemplate).where(PromptTemplate.template_id == template_id))
+    target_tpl = res.scalars().first()
+    if not target_tpl:
+        raise HTTPException(status_code=404, detail=f"Prompt template ID {template_id} not found")
+        
+    template_key = target_tpl.template_key
+    template_text = target_tpl.template_text
+    
+    # 2. Get latest version of that key
+    ver_res = await db.execute(
+        select(func.max(PromptTemplate.version))
+        .where(PromptTemplate.template_key == template_key)
+    )
+    latest_version = ver_res.scalar() or 0
+    new_version = latest_version + 1
+    
+    # 3. Deactivate all active versions of that key
+    await db.execute(
+        update(PromptTemplate)
+        .where(PromptTemplate.template_key == template_key)
+        .values(is_active=False)
+    )
+    
+    # 4. Insert new version record representing the rollback event
+    new_tpl = PromptTemplate(
+        template_key=template_key,
+        template_text=template_text,
+        version=new_version,
+        is_active=True,
+        created_by="Rollback Admin"
+    )
+    db.add(new_tpl)
+    await db.commit()
+    
+    # 5. Update ai_configuration JSON
+    config = await get_ai_config()
+    config[template_key] = template_text
+    await update_ai_config(config)
+    
+    return {
+        "status": "success", 
+        "message": f"Successfully rolled back {template_key} to version {target_tpl.version} (created as new version {new_version})."
+    }
 
 if __name__ == "__main__":
     import uvicorn

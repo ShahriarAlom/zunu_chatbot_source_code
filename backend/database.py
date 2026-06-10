@@ -140,6 +140,19 @@ class KbChunkEmbedding(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
 
+class KbTag(Base):
+    __tablename__ = "kb_tags"
+
+    tag_id = Column(Integer, primary_key=True, autoincrement=True)
+    tag_name = Column(String(50), nullable=False, unique=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+class KbDocumentTag(Base):
+    __tablename__ = "kb_document_tags"
+
+    document_id = Column(Integer, ForeignKey('kb_documents.document_id', ondelete='CASCADE'), primary_key=True)
+    tag_id = Column(Integer, ForeignKey('kb_tags.tag_id', ondelete='CASCADE'), primary_key=True)
+
 # --- DAILY METRICS / ANALYTICS ---
 
 class DailyMetrics(Base):
@@ -159,6 +172,17 @@ class DailyMetrics(Base):
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
+
+class PromptTemplate(Base):
+    __tablename__ = "prompt_templates"
+
+    template_id = Column(Integer, primary_key=True, autoincrement=True)
+    template_key = Column(String(50), nullable=False)
+    template_text = Column(Text, nullable=False)
+    version = Column(Integer, default=1)
+    is_active = Column(Boolean, default=True)
+    created_by = Column(String(255), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
 
 # --- AI CONFIGURATION ---
 

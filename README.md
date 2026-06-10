@@ -45,7 +45,7 @@ This package is organized as follows:
 
 ### 5. 🧪 Testing & Demos (`/demo`)
 *   **`test_widget.html`:** A simple HTML sandbox file used to run, preview, and test the chat widget locally.
-*   **`support_admin_dashboard_mock_demo.html`:** A dummy mock dashboard showing how an admin takeover panel interfaces with the WebSocket admin endpoint (`/ws/admin`).
+*   **`support_admin_dashboard_mock_demo.html`:** The fully-functional, production-ready admin panel dashboard, providing local preview capabilities for managing settings, prompts, categories/tags, and session takeover.
 
 ### 6. 🛠️ Website Code Alterations (`/laravel-scripts-changed-for-chatbot-deployment`)
 *   **[README.md](file:///J:/realdealride-chatbot/ai-chatbot-project/deliverables/laravel-scripts-changed-for-chatbot-deployment/README.md):** Detailed tracking file mapping exactly which files and lines were modified or created inside the Laravel repository.
@@ -97,5 +97,23 @@ This package is organized as follows:
 *   **Zero Database Session Sharing:** The Laravel website and FastAPI chatbot require no shared database access, session tables, or Redis clusters for session handshake.
 *   **Stateless Cryptography:** The website signs user details in-memory using HS256 JWT, and the chatbot verifies the identity in-memory, ensuring absolute portability and backend decoupling.
 *   **Graceful Guest Fallback:** If a verification signature is invalid or expired, the connection falls back gracefully to a guest session instead of disconnecting the user.
+
+---
+
+## 🖥️ Production-Ready Admin Dashboard
+
+A fully-functional, production-ready Admin Dashboard is provided in this deliverables package:
+*   **Location:** [admin_dashboard.html](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/frontend/admin_dashboard.html)
+*   **Overview:** Provides dynamic management of KB Categories and Tags, chatbot personality system prompts (including fallback/escalation prompts with historical rollback versions), native HNSW vector index settings, unanswered query tracking, and the RAG test query sandbox.
+*   **Local Testing:** Open the HTML file in any modern browser. It connects out-of-the-box to your local FastAPI backend instance (`http://localhost:8085`) and dynamically interacts with the MariaDB vector database.
+
+---
+
+## 📚 API Documentation & Specifications
+
+The chatbot exposes fully-documented REST APIs and real-time WebSocket streams. You can find their specifications here:
+*   **Swagger OpenAPI JSON Schema:** [openapi.json](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/openapi.json) — Exposes Swagger REST API schemas for KB CRUD, settings, and analytics.
+*   **AsyncAPI Specification:** [AsyncAPI.yaml](file:///j:/realdealride-chatbot/ai-chatbot-project/deliverables/docs/AsyncAPI.yaml) — Defines WebSocket connection streams for regular users (`/ws/chat`) and admin takeover (`/ws/admin`).
+
 
 

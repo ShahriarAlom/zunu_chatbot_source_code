@@ -239,6 +239,7 @@
             background: var(--rdr-bg);
             padding: 24px;
             overflow-y: auto;
+            overflow-x: hidden;
             display: flex;
             flex-direction: column;
             gap: 14px;
@@ -251,6 +252,7 @@
             line-height: 1.5;
             border-radius: 20px;
             box-sizing: border-box;
+            word-break: break-word;
             animation: rdr-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
@@ -482,6 +484,7 @@
 
     let isOpen = false;
     let ws = null; // WebSocket connection to FastAPI
+    let chatState = 'bot';
 
     button.addEventListener('click', () => {
         isOpen = !isOpen;
@@ -528,6 +531,7 @@
         messages.innerHTML = '<div class="rdr-msg rdr-msg-bot">Hi there! 👋 I\'m Zunu, your RealDealRide AI Assistant. How can I help you with your booking today?</div>';
         historyPanel.classList.remove('open');
         windowEl.classList.remove('expanded');
+        chatState = 'bot';
         
         // Reconnect WebSocket
         reconnectWebSocket();
@@ -705,6 +709,10 @@
             }
             try {
                 const payload = JSON.parse(event.data);
+                if (payload.role === 'status') {
+                    chatState = payload.state;
+                    return;
+                }
                 if (payload.role === 'admin') {
                     addMessage(payload.content, 'admin');
                 } else if (payload.role === 'system') {
@@ -738,7 +746,9 @@
         
         if(ws && ws.readyState === WebSocket.OPEN) {
             ws.send(text);
-            addMessage("<div class='spinner-border spinner-border-sm text-info'></div> Thinking...", 'bot');
+            if (chatState === 'bot') {
+                addMessage("<div class='spinner-border spinner-border-sm text-info'></div> Thinking...", 'bot');
+            }
         } else {
             addMessage("The connection to the server is lost. Please refresh the page.", 'bot');
         }

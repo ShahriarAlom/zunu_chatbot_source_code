@@ -21,7 +21,8 @@ DEFAULT_CONFIG = {
     "escalation_message": "I'd be happy to help with that, but I'll need to connect you with one of our support team members who can access your account details. Hang tight - someone will be with you shortly!",
     "escalation_rate_alert": 20,
     "response_time_alert": 5,
-    "email_alerts": True
+    "email_alerts": True,
+    "takeover_wait_timeout_minutes": 10
 }
 
 async def get_ai_config() -> dict:
