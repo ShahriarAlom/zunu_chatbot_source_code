@@ -25,7 +25,12 @@ def get_mariadb_uri():
     return f"mysql+aiomysql://{username}:{quoted_password}@{host}:{port}/{database}"
 
 DATABASE_URL = get_mariadb_uri()
-engine = create_async_engine(DATABASE_URL, echo=False)
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_recycle=1800
+)
 AsyncSessionLocal = sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
 )

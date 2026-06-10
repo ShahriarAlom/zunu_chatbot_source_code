@@ -24,7 +24,12 @@ def get_laravel_db_uri():
     return f"mysql+aiomysql://{username}:{quoted_password}@{host}:{port}/{database}"
 
 LARAVEL_DB_URL = get_laravel_db_uri()
-laravel_engine = create_async_engine(LARAVEL_DB_URL, echo=False)
+laravel_engine = create_async_engine(
+    LARAVEL_DB_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_recycle=1800
+)
 LaravelSessionLocal = sessionmaker(
     laravel_engine, class_=AsyncSession, expire_on_commit=False
 )
