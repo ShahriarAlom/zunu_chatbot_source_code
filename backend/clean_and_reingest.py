@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
 from rag_pipeline import process_document_background
+from database import get_mariadb_uri
 
-LARAVEL_DB_URL = os.getenv("MARIADB_URI", "mysql+aiomysql://root:password@mariadb_chatbot:3306/realdealride_ai")
+LARAVEL_DB_URL = get_mariadb_uri()
 engine = create_async_engine(LARAVEL_DB_URL)
 async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
