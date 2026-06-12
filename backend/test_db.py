@@ -3,7 +3,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
-LARAVEL_DB_URL = os.getenv("LARAVEL_DB_URI", "mysql+aiomysql://rdadmin_dev:b%21vq%3BN%7DNjFJ1@laravel_db_simulator:3306/rdadmin_dev_realdealride")
+LARAVEL_DB_URL = os.getenv("LARAVEL_DB_URI", "mysql+aiomysql://root:@localhost:3306/rdadmin_realdealride")
 
 engine = create_async_engine(LARAVEL_DB_URL)
 

@@ -16,23 +16,6 @@ services:
       # This automatically runs our init script on the first startup!
       - ./requirements/init-mariadb.sql:/docker-entrypoint-initdb.d/init-mariadb.sql
 
-  # The Simulated Live Laravel Database (Bypasses XAMPP completely)
-  laravel_db_simulator:
-    image: mariadb:latest
-    container_name: rdr_laravel_db_simulator
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: rdadmin_dev_realdealride
-      MYSQL_USER: rdadmin_dev
-      MYSQL_PASSWORD: 'b!vq;N}NjFJ1'
-    ports:
-      - "3308:3306" # Mapped to 3308 on host to avoid conflicts
-    volumes:
-      - rdr_laravel_data:/var/lib/mysql
-      # Auto-loads your 22MB SQL dump into the container on startup!
-      - ./realdealride.com/realdealride.com/database.sql:/docker-entrypoint-initdb.d/init.sql
-
   # The FastAPI Backend
   backend:
     build: 
@@ -55,4 +38,3 @@ services:
 
 volumes:
   rdr_ai_data:
-  rdr_laravel_data:
