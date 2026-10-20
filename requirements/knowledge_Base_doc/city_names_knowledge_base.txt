@@ -1,0 +1,137 @@
+RealDealRide Service Locations - City Name Reference Guide
+==========================================================
+
+This document maps all official RealDealRide service locations to their common
+alternative names, abbreviations, slangs, misspellings, and regional references.
+When a user mentions any of the terms below, the corresponding EXACT DATABASE
+NAME must be used when searching car inventory.
+
+──────────────────────────────────────────────────────────────────────────────
+LOCATION 1: Germantown
+──────────────────────────────────────────────────────────────────────────────
+Exact Database Name: Germantown
+State: Maryland (MD)
+County: Montgomery County
+Region: Upcounty, DMV (D.C.–Maryland–Virginia)
+
+Common Slangs & Nicknames:
+  - G-town
+  - Gtown
+  - G town
+  - GTown
+  - G-Town
+
+With State or Country Suffix (user may type these):
+  - Germantown MD
+  - Germantown, MD
+  - Germantown Maryland
+  - Germantown, Maryland
+  - Germantown US
+  - Germantown USA
+  - Germantown, United States
+
+Common Misspellings:
+  - German town
+  - German Town
+  - Germanton
+  - Germantown
+  - Germentown
+  - Germantwon
+  - Germantowm
+
+Zip Codes (user may search by zip):
+  - 20874
+  - 20876
+
+Neighborhoods & Villages Within Germantown:
+  - Churchill Village
+  - Gunners Lake
+  - Kingsview
+  - Clopper Mill
+  - Milestone
+  - Century Oak
+
+Related Area References That Should Map to Germantown:
+  - Upcounty Maryland (Germantown is the largest Upcounty community)
+  - Near Clarksburg
+  - Near Boyds
+
+──────────────────────────────────────────────────────────────────────────────
+LOCATION 2: Rockville
+──────────────────────────────────────────────────────────────────────────────
+Exact Database Name: Rockville
+State: Maryland (MD)
+County: Montgomery County (County Seat)
+Region: DMV (D.C.–Maryland–Virginia)
+
+Common Slangs & Nicknames:
+  - Rock City
+  - The Rock Pile
+  - RV (informal abbreviation)
+  - Rockvillians (used to describe residents)
+
+With State or Country Suffix (user may type these):
+  - Rockville MD
+  - Rockville, MD
+  - Rockville Maryland
+  - Rockville, Maryland
+  - Rockville US
+  - Rockville USA
+  - Rockville, United States
+
+Common Misspellings:
+  - Rock ville
+  - Rock Ville
+  - Rockvile
+  - Rockvill
+  - Rockville
+  - Rockvlle
+  - Rokvile
+
+Zip Codes (user may search by zip):
+  - 20850
+  - 20851
+  - 20852
+  - 20853
+
+Neighborhoods Within Rockville:
+  - Twinbrook (also called "The Brook")
+  - Lincoln Park (also called "LP")
+  - King Farm
+  - Fallsgrove
+  - Rockville Town Center
+
+Related Area References That Should Map to Rockville:
+  - Montgomery County seat
+  - Near North Bethesda
+  - Near Pike District
+  - Rockville Pike area
+
+──────────────────────────────────────────────────────────────────────────────
+GENERAL REGIONAL REFERENCES
+──────────────────────────────────────────────────────────────────────────────
+The following regional terms cover BOTH Germantown and Rockville. If a user
+uses these terms without specifying a city, ask them which specific location
+they prefer:
+
+  - MoCo (short for Montgomery County)
+  - Montgomery County
+  - DMV area (D.C.–Maryland–Virginia metro area)
+  - DC area / Washington DC area / near DC
+  - Maryland / MD
+  - Greater Washington area
+  - National Capital Region
+
+──────────────────────────────────────────────────────────────────────────────
+INSTRUCTIONS FOR THE AI ASSISTANT
+──────────────────────────────────────────────────────────────────────────────
+1. When a user mentions ANY term from this document, resolve it to the
+   EXACT DATABASE NAME before searching inventory.
+2. If the user uses a regional term (like "MoCo" or "Maryland"), ask which
+   specific city they want: Germantown or Rockville.
+3. Always pass ONLY the exact database name (e.g., "Germantown" or
+   "Rockville") to the search_car_inventory_tool. Never pass slangs,
+   state names, or zip codes to the tool.
+4. If the user mentions a city not listed here, politely inform them that
+   RealDealRide currently operates in Germantown and Rockville, Maryland,
+   and ask if they would like to see cars in either of those locations.
